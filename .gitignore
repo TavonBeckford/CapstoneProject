@@ -1,0 +1,23 @@
+# Files to ignore when adding and committing files to a repository
+.DS_Store
+Thumbs.db
+
+*.py[cod]
+*$py.class
+app/__pycache__/
+migrations/__pycache__/
+migrations/versions/__pycache__/
+
+# virtualenv
+.venv/
+venv/
+
+# PyCharm
+.idea
+
+# VS Code
+.vscode
+
+# Unix-Related
+requirements-linux.txt
+

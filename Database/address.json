@@ -1,0 +1,22 @@
+[
+	{"street":"Red Hills Rd","state": "Kingston 19", "parish":"Kingston"},
+	{"street":"Knutsford Blvd","state": "Kingston 5", "parish":"Kingston"},
+	{"street":"Lighthouse Rd","state": "Negril", "parish":"Montego Bay"},
+	{"street":"Hillview Ave","state": "Kingston 10", "parish":"Kingston"},
+	{"street":"Constant Spring Rd","state": "Kingston 5", "parish":"Kingston"},
+	{"street":"Hummingbird Cluster","state": "Ocho Rios", "parish":"St.Ann"},
+	{"street":"Red Hills Road","state": "Kingston 8", "parish":"St.Andrew"},
+	{"street":"West St","state": "Port Antonie", "parish":"Port Antonio"},
+	{"street":"Angels Walks Rd","state": "Spanish Town", "parish":"Saint Catherine"},
+	{"street":"Grenada Cres","state": "Kinston 5", "parish":"Kingston"},
+	{"street":"Ruthven Bldg","state": "Kingston 10", "parish":"Kingston"},
+	{"street":"Lady Musgrave Road","state": "Kingston 5", "parish":"Kingston"},
+	{"street":"Killarney Rd","state": "Ocho Rios", "parish":"St.Ann"},
+	{"street":"Oxford Terr","state": "Kingston ", "parish":"Kingston"},
+	{"street":"John Pringle Dr","state": "Hopewell", "parish":"Hanover"},
+	{"street":"Orange St","state": "", "parish":"Montego Bay"},
+	{"street":"Manch Rd","state": "Kingston 5", "parish":"Mandeville"},
+	{"street":"Lismore Ave","state": "May Pen", "parish":"Clarendon"},
+	{"street":"Crieffe Rd","state": "Kingston 6", "parish":"Kingston"}
+
+]

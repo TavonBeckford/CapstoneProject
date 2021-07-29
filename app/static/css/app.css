@@ -1,0 +1,545 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;600;700;800;900&family=Poppins&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Wallpoet&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128+Text&family=Wallpoet&display=swap');
+
+:root {
+    --color-1: #2e294e;
+    --color-2: #E4b363;
+    --color-3: #048a81;
+    --whitespace: #f9f9f9;
+    --red: #e63946;
+
+    --white: #FDFFFC;
+    --navbar: rgb(25, 62, 97);
+    --accent1: rgba(240, 58, 71,0.36); /*#F03A47;*/
+    --accent2: #EFF5FB;
+    --textColor1: #FDFFFC;
+    --textColor2: #101010;
+    --tableColor: #112A41;
+    --tableHover: #1B2E3F;
+    --accentBorder: #DEE2E6;
+    --primaryFont: 'Nunito', 'Poppins', sans-serif;
+    --secondaryFont: 'Wallpoet', cursive;
+    --tertiaryFont: 'Libre Barcode 128 Text', cursive, 'Nunito';
+}
+
+body {
+    box-sizing: border-box;
+    margin: 0;
+    font-family: var(----primaryFont);
+    background-color: var(--whitespace);
+}
+
+#website-name{
+    font-weight:600;
+    font-size: 20px;
+    color: var(--textColor1);
+    
+}
+
+#jets{
+    font-family: var(--secondaryFont);
+}
+
+#jets-long{
+    font-family: var(--tertiaryFont);
+    font-size:  1rem;
+}
+
+.nav-item.dynamic-link{
+    padding-left: 3rem;
+    font-weight: 600;
+}
+.nav-link {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+#logged-in .nav-link{
+    color: var(--whitespace) !important;
+    font-size: 15px;
+    padding-right: 0 !important;
+    transition: opacity 0.4s;
+}
+
+#logged-in .nav-link:hover{
+    opacity: 0.65;
+}
+
+#user-menu{
+    font-size: 15px;
+}
+#user-menu .nav-link.username{
+    color: var(--whitespace) !important;
+    padding-right: 0 !important;
+    transition: opacity 0.4s;
+}
+#user-menu:hover .nav-link.username{
+    opacity: 0.75;
+}
+
+.dropdown-arrow{
+    width: 24px;
+    height: 24px;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    right: 0.5rem;
+    background-color: var(--white);
+}
+.dropdown-content .nav-link {
+    color: black !important;
+    display: block;
+    transition: padding-left 0.5s, background-color 0.8s, color 0.5s;
+    padding: 0.7rem;
+}
+svg {
+  margin-right: 1rem;
+}
+
+.dropdown-content .account-settings {
+    background-color: rgba(25, 62, 97,0.1);
+}
+
+.account-settings > svg{
+    transition: width 0.5s, height 0.5s;
+}
+.dropdown-content:hover .account-settings > svg {
+    fill: white;
+    height:  5rem;
+    width:  5rem;
+}
+.dropdown-content:hover .account-settings {
+    background-color: rgba(25, 62, 97,0.8);
+    padding-left: 1rem;
+    color: white !important;
+    flex-direction: column;
+}
+
+.dropdown-content .logout-btn:hover {
+    background-color: var(--navbar);
+    padding-left: 1rem;
+    color: white !important;
+}
+.dropdown-content .logout-btn:hover > svg {
+    fill: white;
+}
+
+.username:hover + .dropdown-content {   /* Change to .username:focus for an 'on-click'-like event */
+    display: block;
+    color: black;
+}
+
+.dropdown-content:hover{
+    display: block;
+    color: black;
+}
+
+.btn{
+    background-color: var(--navbar);
+    font-weight: 700;
+    font-size: 12px;
+    height: 32px;
+    color: black;
+    border:  1px solid rgba(25, 62, 97,0.25);
+}
+.simulate-btn, .issue-btn {
+    background-color: var(--accent1);
+    min-width: 7rem !important;
+}
+.simulate-btn:hover, .issue-btn:hover, .archive-btn:hover{
+    opacity:  0.9;
+    background-color: unset;
+    border:  1px solid black;
+}
+.archive-btn{
+    background-color: rgba(25, 62, 97,0.2);
+    min-width: 7rem !important;
+}
+.print-btn{
+    background-color: var(--white);
+    min-width: 7rem !important;
+}
+.print-btn:hover{
+    opacity:  0.95;
+    background-color: var(--accent2);
+    border:  1px solid black;
+}
+.reset-btn{
+    background-color: rgba(25, 62, 97,0.2);
+    min-width: 7rem !important;
+}
+.reset-btn:hover{
+    opacity:  0.95;
+    background-color: var(--whitespace);
+    border:  1px solid black;
+}
+label{
+    font-weight: bold;
+    margin-bottom: unset !important;
+}
+
+input[type='text'], input[type='search'], select, textarea{
+    color:#39393a;
+    font-weight: 500;
+    border-radius: 5px;
+    padding:10px;
+    border:1px solid rgba(25, 62, 97,0.2);
+    box-shadow:0 0 15px 4px rgba(227, 231, 234, 0.03);
+    border-radius: 4px;    
+}
+
+input[type='file'] {
+    font-weight: 500;
+}
+input:focus, select:focus, textarea:focus{
+    outline-style:solid;
+    outline-width: 1px;
+    outline-color: rgba(255, 133, 82, 0.1);
+}
+input[type='text'], input[type='search'], input[type='password']{
+    height: 30px;
+    font-size: 14px;
+    width: 18rem !important;
+    font-weight: 500;
+}
+input[type='text']:valid, input[type='search']:valid, input[type='password']:valid{
+    /*box-shadow: 0 0 2px var(--navbar);*/
+    /*background-color:rgba(80, 174, 160,0.1);*/
+}
+
+select{
+    width: 18rem !important;
+    height: 30px !important;
+    font-size: 14px !important;
+    font-weight: 500;
+}
+
+#manualIssueForm{
+    width: 100% !important;
+}
+
+#manualIssueForm label{
+    font-weight: 500 !important;
+}
+
+#manualIssueForm button {
+    color: white;
+}
+
+/* SIGN IN PAGE */
+
+
+.login-page{
+    background-color: unset !important;
+}
+.login-page .alert{
+    position: absolute;
+    width: 25%;
+}
+.login-frame{
+    width: 75%;
+}
+.login-frame button{
+    background-color: rgba(25, 62, 97,0.9);
+    color:  var(--whitespace);
+    width: 8rem !important;
+    transition: background-color 0.5s;
+}
+.login-frame button:hover{
+    background-color: rgba(25, 62, 97,0.95);
+}
+#sign-in-section{
+    background-color: var(--whitespace);
+    border-radius: 20px 0 0 20px;
+    width: 55%;
+}
+#sign-in-section label{
+    font-size: 14px;
+}
+#sign-in-section .jets-name{
+    font-weight: 900;
+    color: var(--navbar);
+    letter-spacing: 2px;
+    font-weight: 16px;
+}
+.sign-in-text{
+    font-size: 24px;
+    font-weight: 700;
+}
+#loginForm{
+    padding: 5rem;
+}
+
+#loginForm input[type='text'], input[type='password'] {
+    height: 34px;
+    font-size: 12px;
+    width: 100%;
+}
+.login-app-name{
+    font-family: var(--tertiaryFont);
+    font-size: 3rem;
+    margin: unset;
+}
+#app-name-section{
+    background-color: var(--navbar);
+    color: var(--textColor1);
+    padding: 2rem 0;
+    border-radius: 0 20px 20px 0;
+    width: 45%;
+}
+
+
+.form-container{
+    background-color: var(--whitespace);
+    border-radius: 20px 0 0 20px;
+}
+/* END SIGN IN PAGE */
+
+#content-body{
+    margin-top: 5rem;
+}
+
+main.container{
+    margin-left: 2rem !important;
+    margin-right: 2rem !important;
+}
+.flash-msgs{
+    padding-top:15px;
+    margin-bottom:1rem;
+    text-align:center;
+}
+
+.navbar{
+    background-color: var(--navbar);
+}
+
+.navbar-collapse{
+    flex-grow: unset !important; 
+}
+#navbarSupportedContent li{
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#search-btn-label:hover{
+    cursor: pointer;
+}
+
+#search-icon{
+    width: 90%;
+}
+#searchbar{
+    width: 14rem !important;
+}
+.table td, .table th {
+    padding-left: 2rem;
+}
+table thead th{
+    border-top: 1px solid var(--accentBorder);
+    border-bottom: unset;
+}
+table thead {
+    background-color: var(--accent2);
+    border: 1px solid var(--accentBorder);
+}
+
+table tbody th{
+    border-top: unset !important;
+    border-bottom: 1px solid var(--textColor1);
+}
+tbody tr:last-child th, #offenders-table tbody tr:last-child td{
+    border-bottom: 1px solid var(--tableColor) !important;
+}
+table tbody tr > th{
+    border-left: 1px solid var(--tableColor) !important;
+}
+table tbody tr td:last-child{
+    border-right: 1px solid var(--tableColor) !important;
+}
+table tbody {
+    background-color: var(--tableColor);
+    color: var(--textColor1);
+}
+table td{
+    border-top: unset !important;
+    border-bottom: 1px solid var(--textColor1);
+}
+tbody tr{
+    font-size: 14px;
+}
+table tbody tr:hover{
+    cursor: pointer;
+    background-color: var(--tableHover);
+}
+footer{
+    background-color: var(--navbar) !important;
+    color: var(--white);
+    font-size: 12px;
+}
+
+/* TRAFFIC TICKET */
+#ticket-page-container{
+    margin-left: 8rem;
+    margin-right: 8rem;
+}
+.status-bar{
+    border: 2px solid black;
+    width: fit-content;
+    border-bottom: unset;
+    background-color: #c4c4c4;
+    padding-right: 1.4rem;
+    font-size: 1.2rem;
+}
+.status-bar > h2{
+    font-size: 1.3rem;
+    font-weight: 600;
+    color:  var(--navbar); 
+    padding-left: 1.4rem;
+}
+.ticket{
+    border: 2px solid black;
+    background-color: #c4c4c4;
+}
+.ticket-header{
+    background-color: rgba(25, 62, 97,0.7);
+    height: 5rem;
+}
+.ticket-header h1{
+    font-size: 2rem;
+    font-weight: 700;
+    color:  var(--white);
+}
+.ticket-header h2{
+    font-size: 1.1rem;
+    font-weight: 600;
+    color:  var(--white);
+}
+
+.ticket-header > img{ /*Coat of arms*/
+    width: 3.5rem;
+    height: 3.2rem;
+    margin: 8px 1.5rem 0 1.5rem;
+
+}
+.ticket-header-headings{
+    height: 3.2rem;
+}
+.ticket h3{
+    font-size: 1.2rem;
+    text-align: center;
+    margin: 1rem 0;
+    font-weight: 600;
+}
+.ticket section{
+    border-top: 1px solid black;
+}
+.ticket h4{ /*ticket field title*/
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--navbar);
+    margin-bottom: 3px;
+}
+.ticket p{
+    font-weight: 700;
+    margin: 0;
+    font-size: smaller;
+}
+.ticket-row{
+    display: flex;
+    border-top: 1px solid black;
+    justify-content: space-between;
+    background-color: var(--white);
+}
+.ticket-field{
+    border-left: 1px solid black;
+    padding: 0.6rem 2rem 0.6rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    /*min-width: 20%;*/
+}
+.ticket-field:first-child{
+    border-left: unset;
+    align-self: left;
+}
+.ticket-field{
+    min-width: 18%;
+}
+.ticket-row.bio .ticket-field{
+    max-width: 20%;
+}
+.ticket-row.drivers-license .ticket-field, .ticket-row.vehicle .ticket-field{
+    max-width: 25%;
+
+}
+.ticket-row.offence-1 .ticket-field, .ticket-row.tax-auth .ticket-field, .ticket-row.official-use .ticket-field{
+    min-width: 33%;
+}
+.ticket-row.address .ticket-field{
+    max-width: 50%;
+}
+.ticket-field.offence-desc{
+    min-width: 50%;
+}
+#snapshot-container{
+    height: 40rem;
+}
+#snapshot-container > img{
+    border-top: 1px solid black;
+    width: 100%;
+    height: 100%;
+}
+.ticket{
+    margin-bottom: 7rem;
+}
+
+
+/* END TRAFFIC TICKET */
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) {
+
+}
+
+/* IPAD & LAPTOP */
+@media only screen and (min-width: 768px) {
+    
+}
+
+/* DESKTOP */
+@media only screen and (min-width: 992px) {
+
+    /* NAVIGATION */
+    
+
+    /* HOME PAGE */
+    
+    /* LOGIN PAGE */
+    
+
+    /* REGISTRATION PAGE */
+
+    
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1400px;
+    }
+}
+
+
+/******FLASH MESSAGE******/
+.flash{
+    background-color: #28a745;
+    width: fit-content;
+    border-radius: 0.25rem !important;
+    color: white;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
