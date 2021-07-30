@@ -500,6 +500,61 @@ footer{
 
 /* END TRAFFIC TICKET */
 
+
+/* ACCOUNT SETTINGS */
+
+#change-password-btn{
+    background-color: var(--whitespace);
+    width: fit-content;
+}
+
+#td-password{
+    padding-top: 1.3rem;
+}
+
+#change-password-btn:hover{
+    opacity: 0.9;
+}
+
+#account-table-body > tr:hover{
+    cursor: unset;
+    background-color: unset;
+}
+
+#change-password-form label {
+    font-weight: 700;
+}
+#old-password-field, #new-password-field{
+    width: 100% !important;
+}
+.modal-footer button{
+    transition: background-color 0.4s, color 0.5s, opacity 0.3;
+
+}
+.modal-footer .save-btn {
+    background-color: var(--navbar);
+    color: var(--whitespace);
+}
+.modal-footer .save-btn:hover {
+    background-color: var(--whitespace);
+    color: black;
+}
+
+.modal-title{
+    color: var(--navbar);
+}
+
+.save-btn svg{
+    margin-right: 0.7rem;
+    transition: fill 0.5s;
+}
+.save-btn:hover svg{
+    fill: black;
+}
+
+/* END ACCOUNT SETTINGS */
+
+
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
 

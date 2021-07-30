@@ -149,7 +149,7 @@ const Login = {
                 <label for="password" class="mt-3">Password</label>
                 <input type="password" name="password" class='form-control' required/> 
               </div>
-              <button @click=login_user type="submit" name="submit-btn" class="btn submit-button py-1 mx-auto mt-3">Sign in</button>
+              <button type="submit" name="submit-btn" class="btn submit-button py-1 mx-auto mt-3">Sign in</button>
             </form>
           </section>
           <section id='app-name-section' class='d-flex justify-content-center'>
@@ -536,44 +536,7 @@ const Notifications = {
       .catch(function (error) {
           console.log(error);
       });
-    }/*,
-    simulateOffender() {
-      let self = this;
-      fetch("/api/simulate", {
-          method: 'GET',
-          headers: {
-              'X-CSRFToken': csrf_token,
-              'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
-          },
-          credentials: 'same-origin'
-      })
-      .then(function (response) {
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then(function (offenceData) {
-        if(offenceData['id'] !== '#'){
-          console.log('SIMULATED');
-          if(offenceData['status'].search('@') > 0){
-              console.log('PUSHED TO TRAFFIC OFFENCERS');
-              self.$router.push(`/issued`);
-          } else {
-              console.log(`TICKET STATUS: ${offenceData['status']}`);
-              self.updateTable(offenceData);
-          }
-          console.log(offenceData);
-        } else {
-          console.log(offenceData);
-          console.log('NO MORE IMAGES TO SERVE');
-        }
-        
-      })
-      .catch(function (error) {
-          console.log(error);
-      });
-    }*/,
+    },
     viewTicket(ticketID,status){
       this.$router.push(`/flagged/${ticketID}/${status}`);
     },
@@ -766,7 +729,7 @@ const ViewIssued = {
               <p class='field-value'>{{ticket.dateIssued}}</p>
             </div>
             <div class='ticket-field'>
-              <h4 class='field-name'>Comment</h4>
+              <h4 class='field-name'>Status</h4>
               <p class='field-value'>{{ticket.status}}</p>
             </div>
           </div>
@@ -1032,7 +995,7 @@ const ViewFlagged = {
               <p class='field-value'>{{ticket.dateIssued}}</p>
             </div>
             <div class='ticket-field'>
-              <h4 class='field-name'>Comment</h4>
+              <h4 class='field-name'>Status</h4>
               <p class='field-value'>{{ticket.status}}</p>
             </div>
           </div>
@@ -1350,6 +1313,141 @@ const SearchResults = {
   }
 }
 
+const AccountSettings = {
+  name: 'AccountSettings',
+  template: `
+    <div id="account-page-container" class="">
+      <h3 class='mt-3'>
+        <b>My Account</b>
+      </h3>
+      <table class="table mt-4" id="account-table">
+        <caption class="sr-only">Change Password Table</caption>
+        <thead>
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Password</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody id='account-table-body'>
+          <tr>
+            <td class='pt-3'>{{user.name}}</td>
+            <td id='td-password'>**************</td>
+            <td><change-password-btn data-toggle="modal" data-target="#changePasswordModal"></change-password-btn></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="modal fade" tabindex="-1" role="dialog" id="changePasswordModal">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><b>CHANGE PASSWORD</b></h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+
+              <form method="post" @submit.prevent="changePassword" id="change-password-form" class="d-flex flex-column">
+                <input type="hidden" name="userID" id='user-id-field' :value="user.id" required/> 
+                <div class="form-group">
+                  <label for="oldPassword" class="">Old Password</label>
+                  <input type="password" name="oldPassword" class='form-control' id='old-password-field' required/> 
+                </div>
+                <div class="form-group">
+                  <label for="newPassword" class="">New Password</label>
+                  <input type="password" name="newPassword" class='form-control' id='new-password-field' required/> 
+                </div>
+                <div class="modal-footer d-flex justify-content-between px-0">
+                  <!--<button v-if='status.search(statusStr) >= 0' type="button" class="btn mt-2 close-btn" data-dismiss="modal">Close</button>-->
+                  <button type="submit" name="submit-btn" class="btn save-btn d-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#ffffff">
+                      <path d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                    </svg>
+                  <span>Save changes</span>
+                  </button>
+                  <transition name="fade" class="mt-3">
+                    <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+                        {{ flashMessage }}
+                    </div>
+                  </transition>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `, data() {
+      return {
+        user: JSON.parse(sessionStorage.getItem('jets_user')),
+        status: '',
+        statusStr: 'successfully',
+        flashMessage: sessionStorage.getItem('flash'),
+        displayFlash: false,
+        isSuccess: false,
+        alertSuccessClass: 'alert-success',
+        alertErrorClass: 'alert-danger'
+      }
+  },
+  created() {
+    if (!isLoggedIn()){
+      this.$router.push('/login');
+    }
+  },
+  methods: {
+    changePassword() {
+      let self = this;
+      //let changePasswordForm = document.getElementById('change-password-form');
+      let changePasswordForm = document.forms['change-password-form'];
+      let form_data = new FormData(changePasswordForm);
+      fetch("/api/users/changePassword", {
+          method: 'POST',
+          body: form_data,
+          headers: {
+              'X-CSRFToken': csrf_token,
+              'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+          },
+          credentials: 'same-origin'
+      })
+      .then(function (response) {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+      })
+      .then(function (offenceData) {
+        console.log(offenceData)
+        self.status = offenceData['message']
+
+        if(self.status.search('successfully') >= 0){
+          console.log('Success')
+          const oldpswd = document.getElementById('old-password-field');
+          oldpswd.value ='';
+          const newpswd = document.getElementById('new-password-field');
+          newpswd.value ='';
+          self.isSuccess = true;
+        } else {
+          const oldpswd = document.getElementById('old-password-field');
+          oldpswd.value ='';
+          const newpswd = document.getElementById('new-password-field');
+          newpswd.value ='';
+        }
+        self.displayFlash = true;
+        self.flashMessage = self.status;
+        setTimeout(function() { 
+            self.displayFlash = false;
+        }, 3000);
+        
+      })
+      .catch(function (error) {
+          console.log(error);
+      });
+    }
+  }
+}
+
 const NotFound = {
   name: 'NotFound',
   template: `
@@ -1370,7 +1468,7 @@ const NotFound = {
   },
   methods: {
   }
-};
+}
 
 
 /* CREATE APP */
@@ -1426,7 +1524,7 @@ app.component('app-header', {
             <img src="/static/assets/drop_down_arrow.svg" alt="dropdown arrow" id="dropdown-arrow-icon" class="dropdown-arrow d-inline-block">
           </router-link>
           <div class="dropdown-content rounded">
-            <router-link class="nav-link d-flex account-settings rounded-top" to="">
+            <router-link class="nav-link d-flex account-settings rounded-top" to="/accountSettings">
               <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
                 <g><path d="M0,0h24v24H0V0z" fill="none"/></g>
                 <g><g>
@@ -1591,6 +1689,20 @@ app.component('reset-btn', {
     }
 });
 
+app.component('change-password-btn', {
+    name: 'ChangePasswordBtn',
+    template: 
+    `
+     <div id='change-password-btn' class="btn d-flex justify-content-center align-items-center">
+        <span class="">Change Password</span>
+      </div>
+    `,
+    data() {
+        return {
+        }
+    }
+});
+
 // Define Routes
 const routes = [
     { path: "/", component: Notifications },
@@ -1605,6 +1717,8 @@ const routes = [
     { path: '/archives', component: Notifications },
     { path: '/issueTicket', component: ManualIssue },
     { path: '/searchResults', component: SearchResults },
+    { path: '/accountSettings', component: AccountSettings },
+    { path: '/accountSettings/admin', component: AccountSettings },
 
     // This is a catch all route in case none of the above matches
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound }

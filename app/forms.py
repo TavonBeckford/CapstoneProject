@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, SelectField, DecimalField, BooleanField
+from wtforms import StringField, PasswordField, TextAreaField, SelectField, DecimalField, BooleanField, HiddenField
 from wtforms.validators import InputRequired, DataRequired
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 
@@ -7,6 +7,11 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired()])
     password = PasswordField('Password', validators=[InputRequired()])
+
+class ChangePasswordForm(FlaskForm):
+    userID = HiddenField('User ID', validators=[InputRequired()])
+    oldPassword = PasswordField('Old Password', validators=[InputRequired()])
+    newPassword = PasswordField('New Password', validators=[InputRequired()])
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired()])

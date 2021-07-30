@@ -15,7 +15,7 @@ class User(db.Model):
     def __init__(self, username, password, isAdmin='False'):
         self.username = username
         self.salt = SaltGenerator.string(64)
-        self.password = generate_password_hash(password + self.salt, method='pbkdf2:sha256')
+        setPassword(password)
         self.isAdmin = isAdmin
     
     def is_authenticated(self):
@@ -35,6 +35,9 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r>' % (self.username)
+
+    def setPassword(self, password):
+        self.password = generate_password_hash(password + self.salt, method='pbkdf2:sha256')
         
 
 class Vehicle(db.Model):

@@ -71,6 +71,8 @@ def requires_auth(f):
 ###
 
 @app.route("/api/register", methods=["POST"])
+@login_required
+@requires_auth
 def register():
     """ Register a user """
     # if current_user.is_authenticated:
@@ -88,7 +90,7 @@ def register():
             response = jsonify({'error':'Try a different username or contact the administrator.'})
             return response
 
-        user = User(isAdmin, username, password, SaltGenerator.string(64))
+        user = User(username, password, isAdmin)
 
         db.session.add(user)
         db.session.commit()
@@ -106,8 +108,7 @@ def register():
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     """ Login a user """
-    # if current_user.is_authenticated:
-    #     return redirect(url_for('secure_page'))
+
     form = LoginForm()
     if form.validate_on_submit():
         # include security checks #
@@ -125,7 +126,7 @@ def login():
                 "issue": current_datetime(SYS_DATETIME_FORMAT)
             }
             encoded_jwt = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-            response = jsonify({"message": "Login Successful", 'token':encoded_jwt, 'user':{'id':user.id, 'name':user.username}}) # Hash user_id before sending
+            response = jsonify({"message": "Login Successful", 'token':encoded_jwt, 'user':{'id':user.id, 'name':user.username, 'isAdmin':user.isAdmin}}) # Hash user_id before sending
             return response
         else:
             response = jsonify({'error':'Username or Password is incorrect.'})
@@ -136,6 +137,7 @@ def login():
 
 
 @app.route("/api/auth/logout", methods=["POST"])
+@login_required
 @requires_auth
 def logout():
     """Logs out the user and ends the session"""
@@ -150,6 +152,7 @@ def logout():
 
 
 @app.route("/api/simulate", methods=["GET"])
+@login_required
 @requires_auth
 def simulateOffense():
     """ Simulate an Offense """
@@ -294,6 +297,7 @@ def simulateOffense():
 ###----------- END SIMULATION -----------##
 
 @app.route("/api/issued", methods=["GET"])
+@login_required
 @requires_auth
 def getIssuedTickets():
     """ Get a list of all issued traffic tickets """
@@ -313,6 +317,7 @@ def getIssuedTickets():
 
 
 @app.route("/api/flagged", methods=["GET"])
+@login_required
 @requires_auth
 def getFlaggedTickets():
     """ Get a list of all flagged traffic tickets """
@@ -333,6 +338,7 @@ def getFlaggedTickets():
 
 
 @app.route("/api/issued/<ticketID>", methods=["GET"])
+@login_required
 @requires_auth
 def getIssuedTicket(ticketID):
     """ Get a successfully issued traffic ticket """
@@ -386,6 +392,7 @@ def getIssuedTicket(ticketID):
 
 
 @app.route("/api/flagged/<int:ticketID>/<ticketStatus>", methods=["GET"])
+@login_required
 @requires_auth
 def getFlaggedTicket(ticketID, ticketStatus):
     """ Get a successfully issued traffic ticket """
@@ -447,6 +454,7 @@ def getFlaggedTicket(ticketID, ticketStatus):
 
 
 @app.route("/api/issue", methods=["POST"])
+@login_required
 @requires_auth
 def issueTicket():
     """ Add a new offender """
@@ -617,23 +625,24 @@ def issueTicket():
 
 
 @app.route("/api/search/tickets", methods=["GET"])
-# @requires_auth
+@login_required
+@requires_auth
 def searchTickets():
     """ Search for offenders based on their name, date of offence or ticket status """
 
-    q = request.args.get('q')
-    print('\nQuery:', q)
+    query = request.args.get('q')   # Get the query param 'q' from the request object
+    print('\nQuery Param:', query)
 
     tickets = []
 
-    results = IssuedTicket.query.filter_by(trn=q).all()
+    results = IssuedTicket.query.filter_by(trn=query).all()
     tickets.extend(results)
 
-    results = FlaggedEmail.query.filter_by(trn=q).all()
+    results = FlaggedEmail.query.filter_by(trn=query).all()
     tickets.extend(results)
 
-    # Return all issued tickets where Vehicle registration number is <q>
-    subquery = db.session.query(VehicleOwner.trn).filter(VehicleOwner.licenseplate==q).subquery() # Get trn using reg #
+    # Return all issued tickets where Vehicle registration number is 'query'
+    subquery = db.session.query(VehicleOwner.trn).filter(VehicleOwner.licenseplate==query).subquery() # Get trn using reg #
     results = db.session.query(IssuedTicket).filter(IssuedTicket.trn.in_(subquery)) # Get tickets using trn from subquery
     tickets.extend(results)
 
@@ -642,25 +651,14 @@ def searchTickets():
         ticketID = ticket.id
         ticketStatus = ticket.status
         if ticketStatus.startswith('ISSUED'):
-            ticketData = getIssuedTicket(ticketID).get_json()    #json response to python dict
+            ticketData = getIssuedTicket(ticketID).get_json()    #json response obj to python dict
         else:
-            ticketData = getFlaggedTicket(ticketID, ticketStatus).get_json()    #json response to python dict
+            ticketData = getFlaggedTicket(ticketID, ticketStatus).get_json()    #json response obj to python dict
         
         ticketObjs.append(ticketData)
     
     response = jsonify(ticketObjs)
 
-    # ticketData = {
-    #     'vehicleOwner': ownerObj,
-    #     'vehicle': vehicleObj,
-    #     'offence': offenceObj,
-    #     'incident': incidentObj,
-    #     'location': locationObj,
-    #     'status': ticket.status,
-    #     'dateIssued': dateIssued,
-    #     'id': ticket.id
-    # }
-    
     print('\nSearch Results:', response)
     return response
 
@@ -680,6 +678,44 @@ def getUser(user_id):
     user.pop('password')
     return jsonify(user)
 
+@app.route("/api/users/changePassword", methods=["POST"])
+@login_required
+@requires_auth
+def changePassword():
+    """ Change password for a specified user """
+
+    print('\nChange Password Form Received')
+    form = ChangePasswordForm()
+
+    #print(request.form['userID'], request.form['oldPassword'], request.form['newPassword'])
+    if form.validate_on_submit():
+        print('\nForm has been validated')
+
+        userID = request.form['userID']
+        oldPassword = request.form['oldPassword']
+        newPassword = request.form['newPassword']
+
+        # Verify user
+        if userID != current_user.get_id():
+            return jsonify(message="Invalid Request")
+
+        # db access
+        user = User.query.get(userID)
+        if user is None:
+            return jsonify(message="User not found")
+
+        # Verify the password 
+        if check_password_hash(user.password, oldPassword + user.salt):
+            user.setPassword(newPassword) # Verify SQL injection not possible
+            db_commit(user) # Save updated changes
+            print('\nPassword successfully changed')
+            return jsonify(message="Password successfully changed")
+        else:
+            return jsonify(message='Password attempt was invalid')
+    else:
+        print('\nForm could not be validated')
+        response = jsonify(form.errors)
+        return response
 
 @app.route('/uploads/<filename>')
 def get_new_upload(filename):
