@@ -37,26 +37,45 @@ function flashMessage(obj, success=true) {
 const Register = {
   name: 'Register',
   template: `
-      <div class="container col-md-8 offset-md-2" id="registration-page">
-        <transition name="fade" class="mt-5">
-          <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
-              {{ flashMessage }}
-          </div>
-        </transition>
-        <h1 class="font-weight-bold registration-header mt-4">Register New User</h1>
-        <form method="post" @submit.prevent="register_user" id="registration-form" class="w-100 mt-3">
-            <div class="form-row">  
-                <div class="form-group col-md-6 sm-padding-right">
-                    <label for="username">TRN</label><br>
-                    <input type="text" name="username" class='form-control' required/> 
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="password">Password</label><br>
-                    <input type="password" name="password" class='form-control' required/>
-                </div>
+    <div class="container registration-page d-flex justify-content-center w-100">
+      <div class='d-flex registration-frame pt-3'>
+          <section id='register-user-section' class='p-4'>
+            <img src="/static/assets/favicon.svg" alt="JETS Logo">
+            <span class='jets-name ml-3'>JETS</span>
+
+            <transition name="fade" class="mt-3">
+              <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+                  {{ flashMessage }}
+              </div>
+            </transition>
+
+            <form method="post" @submit.prevent="register_user" id="registrationForm" class="d-flex flex-column">
+              <h1 class="sign-in-text mb-4">New User</h1>
+              <div class="form-group">
+                <label for="username" class="mt-2">Username</label>
+                <input type="text" name="username" class='form-control' id='usernameField' required/> 
+              </div>
+              <div class="form-group ml-5">
+                <label for="password" class="mt-3">Password</label>
+                <input type="password" name="password" class='form-control' required/> 
+              </div>
+              <div class="form-group d-flex align-items-center justify-content-center mt-2">
+                <input type="checkbox" name="isAdmin" class='form-control' id='isAdminCheckbox'/>
+                <label for="isAdmin" class="" id='adminAccountLbl'>Admin Account</label>
+              </div>
+              <button type="submit" name="submit-btn" class="btn submit-button py-1 mx-auto mt-3">Submit</button>
+            </form>
+          </section>
+          <section id='app-name-section' class='d-flex justify-content-center'>
+            <div class='d-flex flex-column justify-content-center'>
+              <div class='login-app-name d-flex justify-content-end'>JamaicaEye</div>
+              <div class='login-app-name d-flex justify-content-end'>Ticketing</div>
+              <div class='login-app-name d-flex justify-content-end'>System</div>
             </div>
-        </form>
+          </section>
       </div>
+      
+    </div>
   `,
   data(){
     return {
@@ -69,16 +88,24 @@ const Register = {
     }
   },
   created() {
+    let self = this;
     if (isLoggedIn()){
-      console.log('Please logout to register an account.');
-      this.$router.push('/notifications');
+      if (JSON.parse(sessionStorage.getItem('jets_user')).isAdmin === 'False'){
+        let message = 'You are not authorized to register an account.';
+        sessionStorage.setItem('flash', message);
+        console.log(message);
+        this.$router.push('/accountSettings');
+      }
     } else {
-      logoutNav();
+      this.$router.push('/login');
+      let message = 'Sign in as an admin to register an account.';
+      sessionStorage.setItem('flash', message);
+      console.log(message);
     }
   },
   methods: {
     register_user() {
-      let form = document.getElementById('registration-form');
+      const form = document.forms['registrationForm'];
       let form_data = new FormData(form);
       let self = this;
       fetch("/api/register", {
@@ -103,17 +130,12 @@ const Register = {
           setTimeout(function() { 
               self.displayFlash = false;
           }, 3000);
-        } else if(jsonResponse['licensePlate'][0][0] === '.' ){
-          self.displayFlash = true;
-          self.flashMessage = jsonResponse['licensePlate'][0];
-          setTimeout(function() { 
-              self.displayFlash = false;
-          }, 3000);
         } else {
-            self.$router.push('/login');
+            self.$router.push('/accountSettings');
             self.user_data = jsonResponse;
-            sessionStorage.setItem('jets_user', JSON.stringify(jsonResponse['id']));
-            sessionStorage.setItem('flash','Registered successfully');
+            let flash = `${jsonResponse['username']} was registered`
+            sessionStorage.setItem('flash',flash);
+            console.log(flash);
         }
           console.log(jsonResponse);
       })
@@ -246,7 +268,7 @@ const Logout = {
     }
     let self = this;
     fetch("/api/auth/logout", {
-      method: 'POST',
+      method: 'GET',
       headers: {
           'X-CSRFToken': csrf_token,
           'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
@@ -1092,11 +1114,6 @@ const ManualIssue = {
 
     <div class="container d-flex justify-content-center py-5">
       <div class='d-flex form-container flex-column'>
-        <transition name="fade" class="mt-3">
-          <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
-              {{ flashMessage }}
-          </div>
-        </transition>
 
         <form method="post" @submit.prevent="add_offender" id="manualIssueForm" class="mb-5 p-5 rounded border d-flex flex-column align-items-center">
           <h1 class="sign-in-text mb-4">Issue Ticket</h1>  
@@ -1316,67 +1333,15 @@ const SearchResults = {
 const AccountSettings = {
   name: 'AccountSettings',
   template: `
-    <div id="account-page-container" class="">
-      <h3 class='mt-3'>
-        <b>My Account</b>
-      </h3>
-      <table class="table mt-4" id="account-table">
-        <caption class="sr-only">Change Password Table</caption>
-        <thead>
-          <tr>
-            <th scope="col">Username</th>
-            <th scope="col">Password</th>
-            <th scope="col">Action</th>
-          </tr>
-        </thead>
-        <tbody id='account-table-body'>
-          <tr>
-            <td class='pt-3'>{{user.name}}</td>
-            <td id='td-password'>**************</td>
-            <td><change-password-btn data-toggle="modal" data-target="#changePasswordModal"></change-password-btn></td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="modal fade" tabindex="-1" role="dialog" id="changePasswordModal">
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title"><b>CHANGE PASSWORD</b></h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-
-              <form method="post" @submit.prevent="changePassword" id="change-password-form" class="d-flex flex-column">
-                <input type="hidden" name="userID" id='user-id-field' :value="user.id" required/> 
-                <div class="form-group">
-                  <label for="oldPassword" class="">Old Password</label>
-                  <input type="password" name="oldPassword" class='form-control' id='old-password-field' required/> 
-                </div>
-                <div class="form-group">
-                  <label for="newPassword" class="">New Password</label>
-                  <input type="password" name="newPassword" class='form-control' id='new-password-field' required/> 
-                </div>
-                <div class="modal-footer d-flex justify-content-between px-0">
-                  <!--<button v-if='status.search(statusStr) >= 0' type="button" class="btn mt-2 close-btn" data-dismiss="modal">Close</button>-->
-                  <button type="submit" name="submit-btn" class="btn save-btn d-flex align-items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#ffffff">
-                      <path d="M0 0h24v24H0z" fill="none"/>
-                      <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
-                    </svg>
-                  <span>Save changes</span>
-                  </button>
-                  <transition name="fade" class="mt-3">
-                    <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
-                        {{ flashMessage }}
-                    </div>
-                  </transition>
-                </div>
-              </form>
-            </div>
+    <div id="account-page-container" class="d-flex">
+      <user-management v-if="user.isAdmin === 'True'" class='border rounded-top'></user-management>
+      <div class='mx-auto align-self-start mt-5'>
+        <password-table></password-table>
+        <transition name="fade" class="mt-3">
+          <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+              {{ flashMessage }}
           </div>
-        </div>
+        </transition>
       </div>
     </div>
     `, data() {
@@ -1394,12 +1359,13 @@ const AccountSettings = {
   created() {
     if (!isLoggedIn()){
       this.$router.push('/login');
+    } else {
+      flashMessage(this);
     }
   },
   methods: {
     changePassword() {
       let self = this;
-      //let changePasswordForm = document.getElementById('change-password-form');
       let changePasswordForm = document.forms['change-password-form'];
       let form_data = new FormData(changePasswordForm);
       fetch("/api/users/changePassword", {
@@ -1434,12 +1400,7 @@ const AccountSettings = {
           const newpswd = document.getElementById('new-password-field');
           newpswd.value ='';
         }
-        self.displayFlash = true;
-        self.flashMessage = self.status;
-        setTimeout(function() { 
-            self.displayFlash = false;
-        }, 3000);
-        
+        flashMessage(this);   
       })
       .catch(function (error) {
           console.log(error);
@@ -1584,6 +1545,224 @@ app.component('app-footer', {
     }
 });
 
+app.component('password-table', {
+  name: 'PasswordTable',
+  template: `
+    <div class="d-flex flex-column justify-content-center">
+      <h3 class='text-center'>
+        <b>My Account</b>
+      </h3>
+      <table class="table mt-4" id="account-table">
+        <caption class="sr-only">Change Password Table</caption>
+        <thead>
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Password</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody id='account-table-body'>
+          <tr>
+            <td class='pt-3'>{{user.name}}</td>
+            <td id='td-password'>**************</td>
+            <td><change-password-btn data-toggle="modal" data-target="#changePasswordModal"></change-password-btn></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="modal fade" tabindex="-1" role="dialog" id="changePasswordModal">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><b>CHANGE PASSWORD</b></h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+
+              <form method="post" @submit.prevent="changePassword" id="change-password-form" class="d-flex flex-column">
+                <input type="hidden" name="userID" id='user-id-field' :value="user.id" required/> 
+                <div class="form-group">
+                  <label for="oldPassword" class="">Old Password</label>
+                  <input type="password" name="oldPassword" class='form-control' id='old-password-field' required/> 
+                </div>
+                <div class="form-group">
+                  <label for="newPassword" class="">New Password</label>
+                  <input type="password" name="newPassword" class='form-control' id='new-password-field' required/> 
+                </div>
+                <div class="modal-footer d-flex justify-content-between px-0">
+                  <!--<button v-if='status.search(statusStr) >= 0' type="button" class="btn mt-2 close-btn" data-dismiss="modal">Close</button>-->
+                  <button type="submit" name="submit-btn" class="btn save-btn d-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#ffffff">
+                      <path d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                    </svg>
+                  <span>Save changes</span>
+                  </button>
+                  <transition name="fade" class="mt-3">
+                    <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+                        {{ flashMessage }}
+                    </div>
+                  </transition>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `, data() {
+      return {
+        user: JSON.parse(sessionStorage.getItem('jets_user')),
+        status: '',
+        statusStr: 'successfully',
+        flashMessage: sessionStorage.getItem('flash'),
+        displayFlash: false,
+        isSuccess: false,
+        alertSuccessClass: 'alert-success',
+        alertErrorClass: 'alert-danger'
+      }
+  },
+  created() {
+    if (!isLoggedIn()){
+      this.$router.push('/login');
+    }
+  },
+  methods: {
+    changePassword() {
+      let self = this;
+      //let changePasswordForm = document.getElementById('change-password-form');
+      let changePasswordForm = document.forms['change-password-form'];
+      let form_data = new FormData(changePasswordForm);
+      fetch("/api/users/changePassword", {
+          method: 'POST',
+          body: form_data,
+          headers: {
+              'X-CSRFToken': csrf_token,
+              'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+          },
+          credentials: 'same-origin'
+      })
+      .then(function (response) {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+      })
+      .then(function (offenceData) {
+        console.log(offenceData)
+        self.status = offenceData['message']
+
+        if(self.status.search('successfully') >= 0){
+          console.log('Success')
+          const oldpswd = document.getElementById('old-password-field');
+          oldpswd.value ='';
+          const newpswd = document.getElementById('new-password-field');
+          newpswd.value ='';
+          self.isSuccess = true;
+        } else {
+          const oldpswd = document.getElementById('old-password-field');
+          oldpswd.value ='';
+          const newpswd = document.getElementById('new-password-field');
+          newpswd.value ='';
+        }
+        self.displayFlash = true;
+        self.flashMessage = self.status;
+        setTimeout(function() { 
+            self.displayFlash = false;
+        }, 3000);
+        
+      })
+      .catch(function (error) {
+          console.log(error);
+      });
+    }
+  }
+})
+
+app.component('user-management', {
+    name: 'UserManagement',
+    template: 
+    `
+      <div id="um-container" class="d-flex flex-column p-5">
+        <div class='heading'>User Management</div>
+        <div @click=register_user id='add-user-btn' class='user-management-btn'>
+          <img src="/static/assets/add_user.svg" alt="add user icon" id="add-user-icon" class="pr-3 pb-1">Add User
+        </div>
+        <div id='remove-user-btn' class='user-management-btn' data-toggle="modal" data-target="#removeUserModal" @click="$emit('deregister_user')">
+          <img src="/static/assets/remove_user.svg" alt="remove user icon" id="remove-user-icon" class="pr-3 pb-1">Remove User
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog" aria-labelledby="removeUserModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="removeUserModalLabel">User to be removed</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <input v-model='username' type="text" id="username-tbd" name="username" class="form-control align-self-center">
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button @click=deregister_user type="button" class="btn btn-primary">Remove User</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+    data() {
+        return {
+            username: ''
+        }
+    },
+    created(){      
+    },
+    methods: {
+      register_user(){
+        console.log('Registering user');
+        this.$router.push('/register');
+      },
+      deregister_user(){
+        console.log('Deregistering user')
+        if(this.username === JSON.parse(sessionStorage.getItem('jets_user')).name){
+          console.log('Deleting your account')
+          this.$router.push('/logout')
+        }
+        let data = {'username':this.username}
+        fetch(`/api/deregister?q=${this.username}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': csrf_token,
+                'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+            },
+            credentials: 'same-origin'
+        })
+        .then(function (response) {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return response.json();
+        })
+        .then(function (offenceData) {
+          console.log(offenceData)
+          self.status = offenceData['message']
+          sessionStorage.setItem('flash', self.status)
+          flashMessage(this);   
+        })
+        .catch(function (error) {
+          console.log('Something went wrong upon json response');
+          console.log(error);
+        });
+      }
+    },
+    emits: ['deregister_user']
+
+});
+
 app.component('search-bar', {
     name: 'SearchBar',
     template: 
@@ -1718,7 +1897,6 @@ const routes = [
     { path: '/issueTicket', component: ManualIssue },
     { path: '/searchResults', component: SearchResults },
     { path: '/accountSettings', component: AccountSettings },
-    { path: '/accountSettings/admin', component: AccountSettings },
 
     // This is a catch all route in case none of the above matches
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound }

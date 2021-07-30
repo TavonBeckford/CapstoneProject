@@ -82,13 +82,21 @@ def register():
 
     if form.validate_on_submit():
         # include security checks #
-        username = request.form['username']
-        password = request.form['password']
-        isAdmin = request.form['isAdmin']
 
+        username = request.form['username']
         if User.query.filter_by(username=username).first(): # if username already exist
             response = jsonify({'error':'Try a different username or contact the administrator.'})
             return response
+
+        password = request.form['password']
+
+        try:
+            isAdmin = request.form['isAdmin']
+            if isAdmin == 'on':
+                isAdmin = 'True'
+        except KeyError:
+            print('\nUser is not an admin')
+            isAdmin = 'False'
 
         user = User(username, password, isAdmin)
 
@@ -98,12 +106,39 @@ def register():
         # convert sqlalchemy user object to dictionary object for JSON parsing
         data = obj_to_dict(user)
         data.pop('password')
+        data.pop('salt')
         response = jsonify(data)
         return response
     else:
         response = jsonify(form.errors)
         return response
 
+@app.route("/api/deregister", methods=["GET"])
+@login_required
+@requires_auth
+def deregister():
+    print(request.args.get('q'))
+    if current_user.is_admin():
+    
+        username = request.args.get('q')
+        user = User.query.filter_by(username=username).first()
+
+        if user:
+            print('\nDeleting user')
+            db.session.delete(user)
+            print('\nSaving changes')
+            db.session.commit()
+            #Logout if deleting own account
+            if current_user.get_id() == user.get_id():
+                logout()
+
+            response = jsonify({'message':f'{username} was deregistered'})
+            return response
+        response = jsonify({'message':f"{username} doesn't exist"})
+        return response
+    else:
+        response = jsonify(message='You are unauthorized')
+        return response
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
@@ -136,7 +171,7 @@ def login():
         return response
 
 
-@app.route("/api/auth/logout", methods=["POST"])
+@app.route("/api/auth/logout", methods=["GET"])
 @login_required
 @requires_auth
 def logout():
@@ -704,14 +739,18 @@ def changePassword():
         if user is None:
             return jsonify(message="User not found")
 
+        message = ''
         # Verify the password 
         if check_password_hash(user.password, oldPassword + user.salt):
             user.setPassword(newPassword) # Verify SQL injection not possible
             db_commit(user) # Save updated changes
-            print('\nPassword successfully changed')
-            return jsonify(message="Password successfully changed")
+            message = 'Password successfully changed'
+            print('\n{message}')
+            return jsonify(message=message)
         else:
-            return jsonify(message='Password attempt was invalid')
+            message = 'Incorrect password'
+            print('\n{message}')
+            return jsonify(message=message)
     else:
         print('\nForm could not be validated')
         response = jsonify(form.errors)

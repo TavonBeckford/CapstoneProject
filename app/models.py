@@ -15,7 +15,7 @@ class User(db.Model):
     def __init__(self, username, password, isAdmin='False'):
         self.username = username
         self.salt = SaltGenerator.string(64)
-        setPassword(password)
+        self.setPassword(password)
         self.isAdmin = isAdmin
     
     def is_authenticated(self):
@@ -32,6 +32,11 @@ class User(db.Model):
             return unicode(self.id)  # python 2 support
         except NameError:
             return str(self.id)  # python 3 support
+
+    def is_admin(self):
+        if self.isAdmin == "True":
+            return True
+        return False
 
     def __repr__(self):
         return '<User %r>' % (self.username)
