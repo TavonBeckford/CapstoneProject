@@ -1290,31 +1290,35 @@ const SearchResults = {
   methods: {
     searchTickets() {
       let self = this;
-      this.tickets = [];
-      fetch(`/api/search/tickets?q=${self.query}`, {
-          method: 'GET',
-          headers: {
-              'X-CSRFToken': csrf_token,
-              'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
-          },
-          credentials: 'same-origin'
-      })
-      .then(function (response) {
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then(function (offenceData) {
-        console.log(offenceData);  
-        offenceData.forEach((ticket, index) => {
-          console.log(ticket);
-          self.updateTable(ticket);
+      if(self.query.length >= 3){
+        self.tickets = [];
+        fetch(`/api/search/tickets?q=${self.query}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': csrf_token,
+                'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+            },
+            credentials: 'same-origin'
         })
-      })
-      .catch(function (error) {
-          console.log(error);
-      });
+        .then(function (response) {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return response.json();
+        })
+        .then(function (offenceData) {
+          console.log(offenceData);  
+          offenceData.forEach((ticket, index) => {
+            console.log(ticket);
+            self.updateTable(ticket);
+          })
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+      } else {
+        console.log('Search query length must have at least 3 characters')
+      }
     },
     viewTicket(ticketID,status){
       if(status.search('ISSUED') === 0){
@@ -1732,7 +1736,6 @@ app.component('user-management', {
           console.log('Deleting your account')
           this.$router.push('/logout')
         }
-        let data = {'username':this.username}
         fetch(`/api/deregister?q=${this.username}`, {
             method: 'GET',
             headers: {

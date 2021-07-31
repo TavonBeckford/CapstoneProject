@@ -375,13 +375,15 @@ def getFlaggedTickets():
 @app.route("/api/issued/<ticketID>", methods=["GET"])
 @login_required
 @requires_auth
-def getIssuedTicket(ticketID):
+def getIssuedTicket(ticketID):  # May use either ticketID or incidentID
     """ Get a successfully issued traffic ticket """
 
     ticket = IssuedTicket.query.get(ticketID)
     if ticket == None:
-        print('\nTICKET NOT FOUND\n')
-        return jsonify({})
+        ticket = IssuedTicket.query.filter_by(incidentID=ticketID)
+        if ticket == None:
+            print('\nTICKET NOT FOUND\n')
+            return jsonify({})
 
     incident = Incident.query.get(ticket.incidentID)
     offence  = Offence.query.get(incident.offenceID)
@@ -429,7 +431,7 @@ def getIssuedTicket(ticketID):
 @app.route("/api/flagged/<int:ticketID>/<ticketStatus>", methods=["GET"])
 @login_required
 @requires_auth
-def getFlaggedTicket(ticketID, ticketStatus):
+def getFlaggedTicket(ticketID, ticketStatus):   # May use either ticketID or incidentID
     """ Get a successfully issued traffic ticket """
 
     ticket = {}
@@ -440,11 +442,19 @@ def getFlaggedTicket(ticketID, ticketStatus):
     if ticketStatus == 'IMAGE PROCESSING ERROR':
         ticket = FlaggedImage.query.get(ticketID)
         if ticket == None:
-            print('\nTICKET NOT FOUND\n')
-            return jsonify({})
-
+            ticket = FlaggedImage.query.filter_by(incidentID=ticketID)
+            if ticket == None:
+                print('\nTICKET NOT FOUND\n')
+                return jsonify({})
+            
     if ticketStatus == 'NO EMAIL ADDRESS ON FILE':
         ticket = FlaggedEmail.query.get(ticketID)
+        if ticket == None:
+            ticket = FlaggedEmail.query.filter_by(incidentID=ticketID)
+            if ticket == None:
+                print('\nTICKET NOT FOUND\n')
+                return jsonify({})
+
         owner = VehicleOwner.query.filter_by(trn=ticket.trn).first()
         vehicle = Vehicle.query.filter_by(licenseplate=owner.licenseplate).first()
         ownerObj = obj_to_dict(owner)
@@ -455,10 +465,6 @@ def getFlaggedTicket(ticketID, ticketStatus):
         vehicleObj['expdate'] = str(vehicleObj['expdate'].strftime(USR_DATE_FORMAT))
         ownerObj['dob'] = str(ownerObj['dob'].strftime(USR_DATE_FORMAT))
         ownerObj['trn'] = trioFormatter(ownerObj['trn'], ' ')
-
-        if ticket == None:
-            print('\nTICKET NOT FOUND\n')
-            return jsonify({})
     
     incident = Incident.query.get(ticket.incidentID)
     offence  = Offence.query.get(incident.offenceID)
@@ -669,18 +675,34 @@ def searchTickets():
     print('\nQuery Param:', query)
 
     tickets = []
+    print('\nSearching by trn')
+    tickets.extend(search_by_trn(query))
 
-    results = IssuedTicket.query.filter_by(trn=query).all()
-    tickets.extend(results)
+    # IF NOT FOUND USING TRN - TRY REGISTRATION #
+    if len(tickets) == 0:
+        print('\nSearching by reg #')
+        tickets.extend(search_by_reg_no(query))
 
-    results = FlaggedEmail.query.filter_by(trn=query).all()
-    tickets.extend(results)
+        # IF NOT FOUND USING REGISTRATION # - TRY OFFENCE
+        if len(tickets) == 0:
+            print('\nSearching by offence')
+            tickets.extend(search_by_offence(query))
 
-    # Return all issued tickets where Vehicle registration number is 'query'
-    subquery = db.session.query(VehicleOwner.trn).filter(VehicleOwner.licenseplate==query).subquery() # Get trn using reg #
-    results = db.session.query(IssuedTicket).filter(IssuedTicket.trn.in_(subquery)) # Get tickets using trn from subquery
-    tickets.extend(results)
+            # IF NOT FOUND USING OFFENCE- TRY LOCATION
+            if len(tickets) == 0:
+                print('\nSearching by location')
+                tickets.extend(search_by_location(query))
 
+    # trnResults = search_by_trn(query)
+    # regNoResults = search_by_reg_no(query)
+    # offenceResults = search_by_offence(query)
+    # regNoResults = search_by_location(query)
+    # tickets.extend(trnResults)
+    # tickets.extend(regNoResults)
+    # tickets.extend(regNoResults)
+    # tickets.extend(regNoResults)
+
+    print(tickets)
     ticketObjs = []
     for ticket in tickets:
         ticketID = ticket.id
@@ -776,6 +798,94 @@ def get_flagged_upload(filename):
 
 
 ########## --------- HELPER FUNCTIONS --------- ###########
+
+## SEARCHING ##
+
+def search_by_trn(trn):
+    # Return all issued and flagged email tickets where trn is param 'trn'
+    tickets = []
+    results = IssuedTicket.query.filter_by(trn=trn).all()
+    tickets.extend(results)
+
+    results = FlaggedEmail.query.filter_by(trn=trn).all()
+    tickets.extend(results)
+    return tickets
+
+def search_by_reg_no(registrationNumber):
+    tickets = []
+    # Return all issued and flagged email tickets where Vehicle registration number is param 'registrationNumber'
+    trns = db.session.query(VehicleOwner.trn).filter(VehicleOwner.licenseplate==registrationNumber).subquery() # Get trn using reg #
+    issued = db.session.query(IssuedTicket).filter(IssuedTicket.trn.in_(trns)) # Get issued tickets using trn from trns
+    flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.trn.in_(trns)) # Get flagged email tickets using trn from trns
+    tickets.extend(issued)
+    tickets.extend(flaggedEmails)
+    return tickets
+
+def search_by_offence(code_or_desc):
+    tickets = []
+    offence = Offence.query.filter_by(code=code_or_desc).first()    # Get the first offence with 'code' matching 'code_or_desc'
+    if offence:
+        print('\nOffence found by code')
+        incidentIDs = db.session.query(Incident.id).filter(Incident.offenceID == offence.code).subquery() # Get incidentID using offenceID from offence
+        issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID.in_(incidentIDs)) # Get issued tickets using incidentID from incidentIDs
+        flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID.in_(incidentIDs)) # Get flagged email tickets using incidentID from incidentIDs
+        flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID.in_(incidentIDs)) # Get flagged image tickets using incidentID from incidentIDs
+        tickets.extend(issued)
+        tickets.extend(flaggedEmails)
+        tickets.extend(flaggedImages)
+        return tickets
+
+    print('\nSearching by offence description')
+    # OFFENCE NOT FOUND BY CODE - SEARCH BY DESCRIPTION
+    offenceCodes = db.session.query(Offence.code).filter(Offence.description.like(f'%{code_or_desc}%')).subquery() # Get code using description
+    incidentIDs = db.session.query(Incident.id).filter(Incident.offenceID.in_(offenceCodes)).subquery() # Get incidentID using offenceID from offenceCodes
+    issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID.in_(incidentIDs)) # Get issued tickets using incidentID from incidentIDs
+    flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID.in_(incidentIDs)) # Get flagged email tickets using incidentID from incidentIDs
+    flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID.in_(incidentIDs)) # Get flagged image tickets using incidentID from incidentIDs
+    tickets.extend(issued)
+    tickets.extend(flaggedEmails)
+    tickets.extend(flaggedImages)
+    return tickets
+ 
+def search_by_location(parish_or_desc):
+    tickets = []
+
+    locationIDs = db.session.query(Location.id).filter(Location.parish.like(f'%{parish_or_desc}%')).subquery() #
+    incidentIDs = db.session.query(Incident.id).filter(Incident.locationID.in_(locationIDs)).subquery() # Get incidentIDs using locationID from location
+    issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID.in_(incidentIDs)) # Get issued tickets using incidentID from incidentIDs
+    flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID.in_(incidentIDs)) # Get flagged email tickets using incidentID from incidentIDs
+    flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID.in_(incidentIDs)) # Get flagged image tickets using incidentID from incidentIDs
+    tickets.extend(issued)
+    tickets.extend(flaggedEmails)
+    tickets.extend(flaggedImages)
+    if len(tickets) > 0:
+        print('\nFound by parish')
+        return tickets
+
+    print('\nNo records found by parish. Searching by desc')
+    # LOCATION NOT FOUND BY PARISH - SEARCH BY DESCRIPTION
+    locations = db.session.execute(f"select * from Location where description like '%{parish_or_desc}%'")
+    for location in locations:
+        incidents = Incident.query.filter_by(locationID=location['id']).all()    # all incidents having locationID = parish_or_desc
+        for incident in incidents:
+            issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID==incident.id).all() # Get issued tickets using incidentID from incidentIDs
+            flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID==incident.id).all() # Get flagged email tickets using incidentID from incidentIDs
+            flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID==incident.id).all() # Get flagged image tickets using incidentID from incidentIDs
+    
+
+    # print(locationIDs)
+    # # db.session.query(Location.id).filter(Location.description.like(f'%{parish_or_desc}%')).subquery()
+    # # print(locationIDs)
+    # incidentIDs = db.session.query(Incident.id).filter(Incident.offenceID.in_(locationIDs)).subquery() # Get incidentID using offenceID from offenceCodes
+    # issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID.in_(incidentIDs)) # Get issued tickets using incidentID from incidentIDs
+    # flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID.in_(incidentIDs)) # Get flagged email tickets using incidentID from incidentIDs
+    # flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID.in_(incidentIDs)) # Get flagged image tickets using incidentID from incidentIDs
+    tickets.extend(issued)
+    tickets.extend(flaggedEmails)
+    tickets.extend(flaggedImages)
+    return tickets
+
+## END SEARCH ##
 
 @app.route('/api/resetSimulation', methods=["GET"])
 @requires_auth

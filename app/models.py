@@ -114,7 +114,7 @@ class Offence(db.Model):
     description = db.Column(db.String(100), nullable=False)
     fine = db.Column(db.Integer, nullable=False)
     points = db.Column(db.Integer, nullable=False)
-    #paymentDuration = 
+    #paymentDuration = db.Column(db.Integer, nullable=False)
 
     def __init__(self, description, code, fine, points):
         self.description = description
