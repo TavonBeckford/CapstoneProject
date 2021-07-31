@@ -20,16 +20,6 @@ password = "password123"
 hashpass = hashlib.md5(password.encode())
 
 
-for d in range(1):
-    adminid = d+1
-    name = fake.name().split(" ")
-    fname = name[0]
-    lname= name[1]
-    username = fname+str.upper(lname[0])
-    password = hashpass.hexdigest()
-    addadmin = f"INSERT INTO Admin(Id,Username,Password) VALUES ('{adminid}','{username}','{password}');"
-    script.write(addadmin+'\n'+'\n')
-
 for d in range(5):
     userid = d+1
     name = fake.name().split(" ")
@@ -37,10 +27,13 @@ for d in range(5):
     lname= name[1]
     username = fname+str.upper(lname[0])
     password = hashpass.hexdigest()
-    adduser = f"INSERT INTO Officer(Id,Username,Password) VALUES ('{userid}','{username}','{password}');"
+    isadmin = 'False'
+    if userid == 1:
+        isadmin = 'True'
+    adduser = f"INSERT INTO User(Id,Username,Password,isAdmin) VALUES ('{userid}','{username}','{password}','{isadmin}');"
     script.write(adduser+'\n'+'\n')
 
-for i in range(8):
+for i in range(16):
     lower_upper_alphabet = string.ascii_uppercase
     random_letter = random.choice(lower_upper_alphabet)+random.choice(lower_upper_alphabet)
     trn = random.randint(100000000,999999999)
@@ -52,9 +45,11 @@ for i in range(8):
     q = random.randint(1,90)
     address = str(q)+" "+ result1[v]['street']+" "+ result1[v]['state'] +" "+ result1[v]['parish']
     email = 'testable876@gmail.com'
+    if i%5 == 0:
+        email = ''
     dob = str(random.randint(1961,2005))+"-"+str(random.randint(1,12))+"-"+str(random.randint(1,28))
     gender = random.choice(['Male','Female'])
-    listofplates = ['9518JK','8424GR','DEPMED','2445GX','1206FQ','6606HW','3840GF','4737HA']
+    listofplates = ['9518JK','8424GR','2445GX','1206FQ','6606HW','3840GF','4737HA','3490GU','PK0587','9579JP','2926JC','DC2369','2889GH','5543JC','5281HE','8139GX']
     licplate = listofplates[i]
     country = 'Jamaica'
     parish = random.choice(['St. Catherine','St. Mary','St. Ann','Manchester','Clarendon','Hanover','Westmoreland','St. James','Trelawny','St. Elizabeth','Kingston','St. Andrew','Portland','St. Thomas'])
@@ -96,12 +91,12 @@ script.write(location3+'\n')
 script.write(location4+'\n')
 script.write(location5+'\n')
 
-for i in range(8):
+for i in range(16):
     curtime = datetime.today().strftime('%H:%M:%S')
     curdate = datetime.today().strftime('%Y-%m-%d')
     locationid = random.choice([1,2,3,4,5])
     offenceid = random.choice(['F100','E200'])
-    images=['flagged.png','ja.jpg','ja2.jpg','ja3.jpg','ja4.jpg','ja5.jpeg','ja6.jpeg','ja7.jpeg']
+    images=['ja.jpg','ja2.jpg','ja3.jpg','ja4.jpg','ja5.jpeg','ja6.jpeg','ja7.jpeg','ja8.jpeg','ja9.jpeg','ja10.jpeg','ja11.jpeg','ja12.jpeg','ja13.jpeg','ja14.jpeg','ja15.jpeg','ja16.jpeg']
     image= images[i]
     addincident = f"INSERT INTO Incident(Date,Time,LocationID,OffenceID,Image) VALUES ('{curdate}','{curtime}','{locationid}','{offenceid}','{image}');"
     script.write(addincident+'\n')
