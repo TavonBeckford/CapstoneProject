@@ -363,16 +363,18 @@ def getFlaggedTickets():
     response = jsonify(ticketObjs)
     return response
 
-
-@app.route("/api/issued/<ticketID>", methods=["GET"])
-@login_required
-@requires_auth
+'''VIEW ISSUED TICKET WITHOUT BEING LOGGED IN (DEMO)'''
+'''USER SHOULD CONFIRM EMAIL ADDRESS BEFORE VIEWING'''
+@app.route("/api/issued/<int:ticketID>", methods=["GET"])
+# @login_required
+# @requires_auth
 def getIssuedTicket(ticketID):  # May use either ticketID or incidentID
     """ Get a successfully issued traffic ticket """
 
     ticket = IssuedTicket.query.get(ticketID)
     if ticket == None:
-        ticket = IssuedTicket.query.filter_by(incidentID=ticketID)
+        ticket = IssuedTicket.query.filter_by(incidentID=ticketID).first()
+        print(ticket)
         if ticket == None:
             print('\nTICKET NOT FOUND\n')
             return jsonify({})
@@ -757,6 +759,109 @@ def issueFlaggedImage():
     }
     print(f"\nSENDING DATA TO VIEW...\n")
     return jsonify(ticketData)
+
+
+@app.route("/api/issue/flaggedEmail", methods=["GET"])
+@login_required
+@requires_auth
+def issueFlaggedEmail():
+
+    email = request.args.get('email')
+    ticketID = request.args.get('ticketID')
+    print('\nReceived:',email, ticketID)
+    print(f"\nGETTING VEHICLE & VEHICLE OWNER FROM DB")
+    # Get Vehicle & Vehicle Owner
+    owner = VehicleOwner.query.filter_by(licenseplate=registrationNumber).first()
+    print('\nOwner',owner)
+    vehicle = Vehicle.query.filter_by(licenseplate=registrationNumber).first()
+
+    # RUN EXCEPTION HANDLER IF Registration # was incorrectly identified
+    if owner == None or vehicle == None:
+        print(f"\nNO VEHICLE OR VEHICLE OWNER FOUND")
+        return generate_empty_ticket()
+
+    print(f"\nVEHICLE & VEHICLE OWNER FOUND")
+    ownerObj = obj_to_dict(owner)
+    vehicleObj = obj_to_dict(vehicle)
+
+    currentTicket = getFlaggedTicket(int(ticketID), 'NO EMAIL ADDRESS ON FILE').get_json()
+    print('\nTicket Found')
+
+    # Convert objects from query results to python dictionaries
+    incidentObj = currentTicket['incident']
+    print('\nIncident:',incidentObj)
+    offenceObj = currentTicket['offence']
+    print('\nOffence:',offenceObj)
+    locationObj = currentTicket['location']
+    print('\nLocation:',locationObj)
+
+    print(f"\nFORMATTING DATA FOR VIEW")
+    # Format dates, fine and image path for frontend
+    ownerObj['expdate'] = str(ownerObj['expdate'].strftime(USR_DATE_FORMAT))
+    vehicleObj['expdate'] = str(vehicleObj['expdate'].strftime(USR_DATE_FORMAT))
+    ownerObj['dob'] = str(ownerObj['dob'].strftime(USR_DATE_FORMAT))
+    imgName = incidentObj['image'].split('/')[-1]
+    print(f"\nFORMATTING COMPLETE. {imgName}")
+
+    # DECLARE NEW TICKET & IMAGE PATH
+    newTicket, imgPath = None, ''
+
+    # CHECK TO SEE WHETHER OR NOT THE VEHICLE OWNER HAS AN EMAIL ADDRESS ON FILE
+    emailAddress = ownerObj['email']
+    if emailAddress != '':
+        incidentID = incidentObj['id']
+        sendEmail(f'http://localhost:8080/issued/{incidentID}',[emailAddress])
+        ticketStatus = f"ISSUED VIA ({emailAddress})"
+        print(f"\nTICKET STATUS: {ticketStatus}")
+        # Create the Ticket and save to JETS' Database/Ticket table
+        # Ticket status will determine whether or not the ticket will apprear under the notifications table
+        print(f"\nCREATING AN ISSUED TICKET FOR DATABASE")
+        newTicket = IssuedTicket(ownerObj['trn'], incidentID, datetime.now(), ticketStatus)
+        print(f"\nTICKET OBJECT CREATED")
+        # SET NEW FILE PATH TO ./uploads/issued
+        imgPath = os.path.join(app.config['ISSUED_FOLDER'], imgName)
+    else:
+        ticketStatus = 'NO EMAIL ADDRESS ON FILE'
+        print(f"\nTICKET STATUS: {ticketStatus}")
+        print(f"\nCREATING A FLAGGED EMAIL TICKET FOR DATABASE")
+        # Create the Ticket and save to JETS' Database/Ticket table
+        # Ticket status will determine whether or not the ticket will apprear under the notifications table 
+        newTicket = FlaggedEmail(ownerObj['trn'], incidentObj['id'], datetime.now(), ticketStatus)
+        # SET NEW FILE PATH TO ./uploads/flagged
+        imgPath = os.path.join(app.config['FLAGGED_FOLDER'], imgName)
+
+    print(f"\nCOMMITTING NEW TICKET TO DB")
+    db_commit(newTicket)
+    db.session.refresh(newTicket)
+
+    print(f"\nDELETING FLAGGED IMAGE TICKET FROM DB")
+    db.session.delete(FlaggedImage.query.get(int(ticketID)))
+    db.session.commit()
+
+    #ASSIGN FILE PATH & MOVE FILE FROM ./uploads to ./imgpath
+    oldPath = os.path.join(app.config['FLAGGED_FOLDER'], imgName)
+    print(f"\nASSIGNING NEW FILE PATH")
+    #incidentObj['image'] = imgPath
+    print(f"MOVING FILE FROM {oldPath} to {imgPath}")
+    os.rename(oldPath,imgPath)
+
+    # FORMAT DATE ISSUED
+    dateIssued = str(newTicket.datetime.strftime(USR_DATETIME_FORMAT))
+
+    ticketData = {
+        'vehicleOwner': ownerObj,
+        'vehicle': vehicleObj,
+        'offence': offenceObj,
+        'incident': incidentObj,
+        'location': locationObj,
+        'status': newTicket.status,
+        'dateIssued': dateIssued,
+        'id': newTicket.id
+    }
+    print(f"\nSENDING DATA TO VIEW...\n")
+    return jsonify(ticketData)
+
+
 
 @app.route("/api/search/tickets", methods=["GET"])
 @login_required

@@ -776,29 +776,34 @@ const ViewIssued = {
     </div>
   `,
   data() {
-      return {
-        ticket: {
-          'vehicleOwner': '',
-          'vehicle': '',
-          'offence': '',
-          'incident': '',
-          'location': '',
-          'status': '',
-          'dateIssued': '',
-          'id': ''
-        },
-        user: sessionStorage.getItem('jets_user'),
-        flashMessage: sessionStorage.getItem('flash'),
-        displayFlash: false,
-        isSuccess: false,
-        alertSuccessClass: 'alert-success',
-        alertErrorClass: 'alert-danger'
-      }
+    return {
+      ticket: {
+        'vehicleOwner': '',
+        'vehicle': '',
+        'offence': '',
+        'incident': '',
+        'location': '',
+        'status': '',
+        'dateIssued': '',
+        'id': ''
+      },
+      user: sessionStorage.getItem('jets_user'),
+      flashMessage: sessionStorage.getItem('flash'),
+      displayFlash: false,
+      isSuccess: false,
+      alertSuccessClass: 'alert-success',
+      alertErrorClass: 'alert-danger'
+    }
   },
   created(){
     if (!isLoggedIn()){
-      this.$router.push('/login');
-      return;
+      //this.$router.push('/login');
+      logoutNav();
+      console.log('Viewing as Offender. Should require email confirmation input for security purposes.');
+      sessionStorage.setItem('flash', 'You are not signed in, hence viewing as an offender.');
+      let self = this;
+      self.fetchOffender(self);
+      flashMessage(self);
     } else {
     loginNav();
       let self = this;
@@ -853,7 +858,8 @@ const ViewFlagged = {
   name: 'ViewFlagged',
   template: `
     <div id="ticket-page-container" class="mt-5">
-      <j-modal headerTitle='LOCATE VEHICLE OWNER' inputLabel='Registration #' icon='search_btn.svg' btnText='Locate' @submit='issueTicket'></j-modal>
+      <j-modal v-if="ticket.status === 'IMAGE PROCESSING ERROR'" headerTitle='LOCATE VEHICLE INFORMATION' inputLabel='Registration #' icon='search_btn.svg' btnText='Locate' @submit='issueFlagedImageTicket'></j-modal>
+      <j-modal v-if="ticket.status === 'NO EMAIL ADDRESS ON FILE'" headerTitle='SET EMAIL ADDRESS' inputLabel='Email Address' icon='send_email.svg' btnText='Send Email' @submit='issueFlagedEmailTicket'></j-modal>
       <transition name="fade" class="mt-5">
         <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
             {{ flashMessage }}
@@ -1123,7 +1129,7 @@ const ViewFlagged = {
         document.getElementsByClassName('archive-btn')[0].classList.remove('d-none');
         document.getElementsByClassName('archive-btn')[0].classList.add('d-flex');
     },
-    issueTicket(registrationNumber){
+    issueFlagedImageTicket(registrationNumber){
       let self = this;
       console.log(`ISSUING TICKET TO: ${registrationNumber}`)
       fetch(`/api/issue/flaggedImage?registrationNumber=${registrationNumber}&ticketID=${self.ticket['id']}`, {
@@ -1152,7 +1158,43 @@ const ViewFlagged = {
             sessionStorage.setItem('flash',response['status']);
           } else {
             console.log(response['status']); 
-            self.$router.push(`/flagged/${response['id']}`);
+            self.$router.push(`/flagged/${response['id']}/${response['status']}`);
+            sessionStorage.setItem('flash',response['status']);
+          }
+        }
+        console.log(response)    
+      })
+    },
+    issueFlagedEmailTicket(emailAddress){
+      let self = this;
+      console.log(`ISSUING TICKET TO: ${emailAddress}`)
+      fetch(`/api/issue/flaggedEmail?email=${emailAddress}&ticketID=${self.ticket['id']}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrf_token,
+            'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+        },
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json();
+        })
+      .then(function (response) {
+        if(response['id'] === '#'){
+          let status = 'NO VEHICLE OR VEHICLE OWNER FOUND'
+          console.log(status);
+          sessionStorage.setItem('flash',status); 
+          //this.$router.push(`/flagged/${this.ticket['id']}/IMAGE PROCESSING ERROR`);
+          window.history.back();
+        } else {
+          // IF TICKET WAS SUCCESSFULLY ISSUED
+          if(response['status'].search('ISSUED') >= 0){
+            console.log(response['status']);  
+            self.$router.push(`/issued/${response['id']}`);
+            sessionStorage.setItem('flash',response['status']);
+          } else {
+            console.log(response['status']); 
+            self.$router.push(`/flagged/${response['id']}/${response['status']}`);
             sessionStorage.setItem('flash',response['status']);
           }
         }
