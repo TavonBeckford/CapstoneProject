@@ -557,13 +557,8 @@ const Notifications = {
       .then(function (offenceData) {
         console.log(offenceData)  
         offenceData.forEach((ticket, index) => {
-          if(ticket['status'] === 'ISSUED (EMAIL)' ){
-            console.log('PUSHED TO TRAFFIC OFFENDERS');
-            this.$router.push(`/issued`);
-          } else {
-            console.log(ticket);
-            self.updateTable(ticket);
-          }
+          console.log(ticket);
+          self.updateTable(ticket);
         })
 
       })
@@ -1157,8 +1152,8 @@ const ViewFlagged = {
             self.$router.push(`/issued/${response['id']}`);
             sessionStorage.setItem('flash',response['status']);
           } else {
-            console.log(response['status']); 
-            self.$router.push(`/flagged/${response['id']}/${response['status']}`);
+            console.log(response['status']);
+            window.history.back();
             sessionStorage.setItem('flash',response['status']);
           }
         }
