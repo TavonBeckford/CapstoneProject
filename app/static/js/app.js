@@ -39,7 +39,7 @@ const Register = {
   template: `
     <div class="container registration-page d-flex justify-content-center w-100">
       <div class='d-flex registration-frame pt-3'>
-          <section id='register-user-section' class='p-4'>
+          <section id='register-user-section' class=''>
             <img src="/static/assets/favicon.svg" alt="JETS Logo">
             <span class='jets-name ml-3'>JETS</span>
 
@@ -133,7 +133,14 @@ const Register = {
         } else {
             self.$router.push('/accountSettings');
             self.user_data = jsonResponse;
-            let flash = `${jsonResponse['username']} was registered`
+            console.log('Username: ' + jsonResponse['username']);
+            let flash = ''
+            if(jsonResponse['username']){
+              flash = `${jsonResponse['username']} was registered`
+            } else {
+              flash = jsonResponse['message']
+            }
+            
             sessionStorage.setItem('flash',flash);
             console.log(flash);
         }
@@ -572,9 +579,12 @@ const ViewIssued = {
   name: 'ViewIssued',
   template: `
     <div id="ticket-page-container" class="mt-5">
+      <transition name="fade" class="mt-5">
+        <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+            {{ flashMessage }}
+        </div>
+      </transition>
       <div class="controls d-flex justify-content-end pt-2">
-        <!--<issue-btn></issue-btn>-->
-        <!--<archive-btn class='ml-3'></archive-btn>-->
         <print-btn id='print-btn' class='ml-3' @click=printTicket></print-btn>
       </div>
       <div id='issued-ticket-status' class='status-bar rounded-top mt-5 d-flex align-items-center'>
@@ -781,15 +791,15 @@ const ViewIssued = {
       }
   },
   created(){
-    /*if (!isLoggedIn()){
+    if (!isLoggedIn()){
       this.$router.push('/login');
       return;
-    }*/
+    } else {
     loginNav();
-    let self = this;
-    //self.offender = sessionStorage.getItem('selected_offender')
-    self.fetchOffender(self);
-    //flashMessage(self);
+      let self = this;
+      self.fetchOffender(self);
+      flashMessage(self);
+    }
   },
   methods: {
     fetchOffender(self){
@@ -838,8 +848,14 @@ const ViewFlagged = {
   name: 'ViewFlagged',
   template: `
     <div id="ticket-page-container" class="mt-5">
+      <j-modal headerTitle='LOCATE VEHICLE OWNER' inputLabel='Registration #' icon='search_btn.svg' btnText='Locate' @submit='issueTicket'></j-modal>
+      <transition name="fade" class="mt-5">
+        <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+            {{ flashMessage }}
+        </div>
+      </transition>
       <div class="controls d-flex justify-content-end pt-2">
-        <issue-btn class='issue-btn'></issue-btn>
+        <issue-btn @issue_ticket=openModal class='issue-btn'></issue-btn>
         <archive-btn class='archive-btn ml-3'></archive-btn>
         <print-btn id='print-btn' class='ml-3' @click=printTicket></print-btn>
       </div>
@@ -1023,7 +1039,6 @@ const ViewFlagged = {
           </div>
         </section>
       </div>
-
     </div>
   `,
   data() {
@@ -1053,9 +1068,8 @@ const ViewFlagged = {
     }
     loginNav();
     let self = this;
-    //self.offender = sessionStorage.getItem('selected_offender')
     self.fetchOffender(self);
-    //flashMessage(self);
+    flashMessage(self);
   },
   methods: {
     fetchOffender(self){
@@ -1103,7 +1117,51 @@ const ViewFlagged = {
         document.getElementsByClassName('issue-btn')[0].classList.add('d-flex');
         document.getElementsByClassName('archive-btn')[0].classList.remove('d-none');
         document.getElementsByClassName('archive-btn')[0].classList.add('d-flex');
+    },
+    issueTicket(registrationNumber){
+      let self = this;
+      console.log(`ISSUING TICKET TO: ${registrationNumber}`)
+      fetch(`/api/issue/flaggedImage?registrationNumber=${registrationNumber}&ticketID=${self.ticket['id']}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrf_token,
+            'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+        },
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json();
+        })
+      .then(function (response) {
+        if(response['id'] === '#'){
+          let status = 'NO VEHICLE OR VEHICLE OWNER FOUND'
+          console.log(status);
+          sessionStorage.setItem('flash',status); 
+          //this.$router.push(`/flagged/${this.ticket['id']}/IMAGE PROCESSING ERROR`);
+          window.history.back();
+        } else {
+          // IF TICKET WAS SUCCESSFULLY ISSUED
+          if(response['status'].search('ISSUED') >= 0){
+            console.log(response['status']);  
+            sessionStorage.setItem('flash',response['status']);
+            //self.$router.push(`/issued`);
+            window.history.back();
+          } else {
+            console.log(response['status']); 
+            sessionStorage.setItem('flash',response['status']);
+            //self.$router.push('/flagged');
+            window.history.back();
 
+          }
+        }
+        console.log(response)    
+      })
+    },
+    openModal(){
+        openModal()
+    },
+    closeModal(){
+      closeModal()
     }
   }
 };
@@ -1190,7 +1248,7 @@ const ManualIssue = {
       let form = document.getElementById('manualIssueForm');
       let form_data = new FormData(form);
       let self = this;
-      fetch("/api/issue", {
+      fetch("/api/issue/upload", {
           method: 'POST',
           body: form_data,
           headers: {
@@ -1234,7 +1292,11 @@ const SearchResults = {
         <div id="searchbar-container" class="d-flex">
           <input type="search" v-model='query' id="searchbar" name="searchbar" placeholder="Search" class="form-control align-self-center">
           <label for="searchbar" id='search-btn-label' class="ml-2 align-self-center">
-            <img @click='searchTickets' src="/static/assets/search_btn.svg" alt="search icon" id="search-icon" class="">
+            <!--<img @click='searchTickets' src="/static/assets/search_btn.svg" alt="search icon" id="search-icon" class="">-->
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 15" width="24px" fill="#7F8189" alt="search icon" id="search-icon" @click='searchTickets'>
+              <path d="M0 0h24v24H0V0z" fill="none"/>
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
           </label>
         </div>
       </div>
@@ -1264,7 +1326,7 @@ const SearchResults = {
           </tr>
         </tbody>
       </table>
-      <div id='search-message' class='d-flex justify-content-center mt-5'>
+      <div id='search-message' class='d-flex justify-content-center my-5'>
         <h3 class='mt-3'>
           <span v-if='tickets.length === 0' class='search-count'>No Records Found</span>
           <span v-else-if='tickets.length === 1' class='search-count'>1 Record Found</span>
@@ -1773,7 +1835,11 @@ app.component('search-bar', {
       <div id="searchbar-container" class="d-flex">
         <input type="text" v-model='query' id="searchbar" name="searchbar" placeholder="Search" class="form-control align-self-center">
         <label for="fname" id='search-btn-label' class="ml-2 align-self-center">
-          <img @click='search' src="/static/assets/search_btn.svg" alt="search icon" id="search-icon" class="">
+          <!--<img @click='search' src="/static/assets/search_btn.svg" alt="search icon" id="search-icon" class="">-->
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 15" width="24px" fill="#7F8189" alt="search icon" id="search-icon" @click='search'>
+            <path d="M0 0h24v24H0V0z" fill="none"/>
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
         </label>
       </div>
     `,
@@ -1786,8 +1852,8 @@ app.component('search-bar', {
     },
     methods: {
       search(){
-        console.log('Searching for ' + this.query)
         if (this.query){
+          console.log('Searching for ' + this.query)
           searchQuery = this.query; // Store globally for access from other components
           this.$router.push('/searchResults');
         }
@@ -1815,7 +1881,7 @@ app.component('issue-btn', {
     name: 'IssueBtn',
     template: 
     `
-     <div class="btn d-flex justify-content-start align-items-center issue-btn">
+     <div @click="$emit('issue_ticket')" class="btn d-flex justify-content-start align-items-center issue-btn">
         <img src="/static/assets/issue_ticket.svg" alt="Issue Icon">
         <span class="d-inline-block pl-2">Issue</span>
       </div>
@@ -1823,7 +1889,8 @@ app.component('issue-btn', {
     data() {
         return {
         }
-    }
+    },
+    emits: ['issue_ticket']
 });
 
 app.component('archive-btn', {
@@ -1884,6 +1951,86 @@ app.component('change-password-btn', {
         }
     }
 });
+
+/* CUSTOM MODAL */
+
+// When the user clicks the button, open the modal 
+function openModal(){
+  // Get the modal
+  var modal = document.getElementById("jmodal");
+  modal.style.display = "block";
+  // Get the button that opens the modal
+  //var btn = document.getElementById("myBtn"); 
+
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+}
+
+function closeModal(){
+  var modal = document.getElementById("jmodal");
+  // Get the <span> element that closes the modal
+  var span = document.getElementsByClassName("close")[0];
+  // When the user clicks on <span> (x), close the modal
+  modal.style.display = "none";
+}
+
+app.component('j-modal', {
+  name: 'JModal',
+    template: 
+    `
+      <!-- The Modal -->
+      <div id="jmodal" class="jmodal align-self-center">
+
+        <!-- Modal content -->
+        <div class="jmodal-content">
+          <div class="jmodal-header d-flex justify-content-between align-items-center">
+            <h2 class=''>{{headerTitle}}</h2>
+            <img src="/static/assets/close.svg" @click=closeModal class="close" alt="Close Icon">
+          </div>
+          <div class="jmodal-body">
+            <label for='user-info'>{{inputLabel}}</label>
+            <input type="text" name="user-info" class='form-control' id='modal-input' v-model='inputField' required/>
+          </div>
+          <div class="jmodal-footer d-flex justify-content-end">
+            <div class="btn d-flex justify-content-start align-items-center modal-btn" @click="$emit('submit',inputField); close_by_locate();">
+              <img :src="image" alt="Button Icon">
+              <span class="d-inline-block pl-2">{{btnText}}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    
+    `,
+    data() {
+        return {
+          image: '/static/assets/' + this.icon,
+          inputField: ''
+        }
+    },
+    created(){
+      this.inputField = '';
+    },
+    methods: {
+      openModal(){
+        openModal()
+      },
+      closeModal(){
+        closeModal()
+      },
+      close_by_locate(){
+        if(this.inputField){
+          closeModal()
+        }
+      }
+    },
+    props: ['headerTitle', 'inputLabel', 'icon', 'btnText'],
+    emits: ['submit']
+})
 
 // Define Routes
 const routes = [

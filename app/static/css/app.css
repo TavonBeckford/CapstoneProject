@@ -21,6 +21,8 @@
     --primaryFont: 'Nunito', 'Poppins', sans-serif;
     --secondaryFont: 'Wallpoet', cursive;
     --tertiaryFont: 'Libre Barcode 128 Text', cursive, 'Nunito';
+
+    --bounceEasing: cubic-bezier(0.51, 0.92, 0.24, 1.15);
 }
 
 body {
@@ -57,7 +59,7 @@ body {
 
 #logged-in .nav-link{
     color: var(--whitespace) !important;
-    font-size: 15px;
+    font-size: 13px;
     padding-right: 0 !important;
     transition: opacity 0.4s;
 }
@@ -67,7 +69,7 @@ body {
 }
 
 #user-menu{
-    font-size: 15px;
+    font-size: 13px;
 }
 #user-menu .nav-link.username{
     color: var(--whitespace) !important;
@@ -97,9 +99,7 @@ body {
     transition: padding-left 0.5s, background-color 0.8s, color 0.5s;
     padding: 0.7rem;
 }
-svg {
-  margin-right: 1rem;
-}
+
 
 .dropdown-content .account-settings {
     background-color: rgba(25, 62, 97,0.1);
@@ -178,6 +178,14 @@ svg {
     background-color: var(--whitespace);
     border:  1px solid black;
 }
+.modal-btn{
+    background-color: var(--navbar);
+    min-width: 7rem !important;
+    color: var(--whitespace);
+}
+.modal-btn:hover{
+    opacity:  0.95;
+}
 label{
     font-weight: bold;
     margin-bottom: unset !important;
@@ -208,7 +216,7 @@ input:focus /*, input[type='text']:focus, input[type='password']:focus, textarea
 }
 input[type='text'], input[type='search'], input[type='password']{
     height: 30px;
-    font-size: 14px;
+    font-size: 13px;
     width: 18rem !important;
     font-weight: 500;
 }
@@ -219,7 +227,7 @@ input[type='text']:valid, input[type='search']:valid, input[type='password']:val
 select{
     width: 18rem !important;
     height: 30px !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 500;
 }
 
@@ -264,8 +272,13 @@ select{
     border-radius: 20px 0 0 20px;
     width: 55%;
 }
+#register-user-section{
+    padding: 1.5rem 0 0 1.5rem;
+    border-radius: 10px 0 0 10px;
+    border: 1px solid rgba(127, 129, 137,0.5);
+}
 #sign-in-section label, #register-user-section label{
-    font-size: 14px;
+    font-size: 13px;
 }
 .jets-name{
     font-weight: 900;
@@ -283,7 +296,7 @@ select{
 
 #loginForm input[type='text'], #registrationForm input[type='text'], input[type='password'] {
     height: 34px;
-    font-size: 12px;
+    font-size: 13px;
     width: 100%;
 }
 .login-app-name{
@@ -328,7 +341,7 @@ main.container{
     flex-grow: unset !important; 
 }
 #navbarSupportedContent li{
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
 }
 
@@ -337,7 +350,7 @@ main.container{
 }
 
 #search-icon{
-    width: 90%;
+
 }
 #searchbar{
     width: 14rem !important;
@@ -376,7 +389,7 @@ table td{
     border-bottom: 1px solid var(--textColor1);
 }
 tbody tr{
-    font-size: 14px;
+    font-size: 12px;
 }
 table tbody tr:hover{
     cursor: pointer;
@@ -385,7 +398,7 @@ table tbody tr:hover{
 footer{
     background-color: var(--navbar) !important;
     color: var(--white);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 /* TRAFFIC TICKET */
@@ -561,7 +574,7 @@ footer{
     padding: 0.8rem 1.3rem;
     min-width: 18rem;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     border-left: 1px solid;
     border-right: 1px solid;
     border-bottom: 1px solid;
@@ -621,6 +634,82 @@ footer{
 /* END REGISTRATION PAGE */
 
 
+/* JMODAL */
+.jmodal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 14rem; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.jmodal-content {
+  position: relative;
+  background-color: #fefefe;
+  margin: auto;
+  padding: 0;
+  /*border: 1px solid #888;*/
+  width: 28rem;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+  -webkit-animation-name: animatetop;
+  -webkit-animation-duration: 0.4s;
+  animation-name: animatetop;
+  animation-duration: 0.4s;
+  border-radius: 10px;
+}
+
+.jmodal-header, .jmodal-footer {
+    padding: 1rem 16px !important;
+    background-color: var(--whitespace);   
+}
+
+.jmodal-header {
+  border-bottom: 1px solid rgba(127, 129, 137,0.5);
+  border-radius: 10px 10px 0 0;
+}
+.jmodal-header h2{
+    margin-bottom: unset;
+    text-transform: uppercase;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navbar);
+}
+
+.jmodal-body {padding: 2.5rem 16px;}
+
+
+.jmodal-footer {
+    border-top: 1px solid rgba(127, 129, 137,0.5);
+    border-radius: 0 0 10px 10px;
+}
+
+.close:hover,
+.close:focus {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Add Animation */
+@-webkit-keyframes animatetop {
+  from {top:-300px; opacity:0} 
+  to {top:0; opacity:1}
+}
+
+@keyframes animatetop {
+  from {top:-300px; opacity:0}
+  to {top:0; opacity:1}
+}
+
+/* END JMODAL */
+
+
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
 
@@ -650,7 +739,7 @@ footer{
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) {
     .container {
-        max-width: 1400px;
+        max-width: 1260px;
     }
 }
 

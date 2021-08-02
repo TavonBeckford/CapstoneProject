@@ -75,42 +75,44 @@ def requires_auth(f):
 @requires_auth
 def register():
     """ Register a user """
-    # if current_user.is_authenticated:
-    #     return redirect(url_for('secure_page'))
+    if current_user.is_admin():
 
-    form = RegistrationForm()
+        form = RegistrationForm()
 
-    if form.validate_on_submit():
-        # include security checks #
+        if form.validate_on_submit():
+            # include security checks #
 
-        username = request.form['username']
-        if User.query.filter_by(username=username).first(): # if username already exist
-            response = jsonify({'error':'Try a different username or contact the administrator.'})
+            username = request.form['username']
+            if User.query.filter_by(username=username).first(): # if username already exist
+                response = jsonify({'error':'Try a different username or contact the administrator.'})
+                return response
+
+            password = request.form['password']
+
+            try:
+                isAdmin = request.form['isAdmin']
+                if isAdmin == 'on':
+                    isAdmin = 'True'
+            except KeyError:
+                print('\nUser is not an admin')
+                isAdmin = 'False'
+
+            user = User(username, password, isAdmin)
+
+            db.session.add(user)
+            db.session.commit()
+
+            # convert sqlalchemy user object to dictionary object for JSON parsing
+            data = obj_to_dict(user)
+            data.pop('password')
+            data.pop('salt')
+            response = jsonify(data)
             return response
-
-        password = request.form['password']
-
-        try:
-            isAdmin = request.form['isAdmin']
-            if isAdmin == 'on':
-                isAdmin = 'True'
-        except KeyError:
-            print('\nUser is not an admin')
-            isAdmin = 'False'
-
-        user = User(username, password, isAdmin)
-
-        db.session.add(user)
-        db.session.commit()
-
-        # convert sqlalchemy user object to dictionary object for JSON parsing
-        data = obj_to_dict(user)
-        data.pop('password')
-        data.pop('salt')
-        response = jsonify(data)
-        return response
+        else:
+            response = jsonify(form.errors)
+            return response
     else:
-        response = jsonify(form.errors)
+        response = jsonify(message='You are unauthorized')
         return response
 
 @app.route("/api/deregister", methods=["GET"])
@@ -191,17 +193,6 @@ def logout():
 @requires_auth
 def simulateOffense():
     """ Simulate an Offense """
-
-
-    ###----------- HELPER FUNCTIONS-----------##
-
-
-    ###----------- END HELPER FUNCTIONS-----------##
-
-
-
-    ###----------- START SIMULATION -----------##
-
 
     # SELECT A RANDOM OFFENCE, LOCATION AND IMAGE
     offence = get_random_record(Offence)
@@ -285,13 +276,14 @@ def simulateOffense():
         # CHECK TO SEE WHETHER OR NOT THE VEHICLE OWNER HAS AN EMAIL ADDRESS ON FILE
         emailAddress = ownerObj['email']
         if emailAddress != '':
-            #sendEmail(f'http://localhost:8080/issued/{registrationNumber}_{imgName}',[emailAddress])
+            incidentID = incidentObj['id']
+            sendEmail(f'http://localhost:8080/issued/{incidentID}',[emailAddress])
             ticketStatus = f"ISSUED VIA ({emailAddress})"
             print(f"\nTICKET STATUS: {ticketStatus}")
             # Create the Ticket and save to JETS' Database/Ticket table
             # Ticket status will determine whether or not the ticket will apprear under the notifications table
             print(f"\nCREATING AN ISSUED TICKET FOR DATABASE")
-            ticket = IssuedTicket(ownerObj['trn'], incidentObj['id'], datetime.now(), ticketStatus)
+            ticket = IssuedTicket(ownerObj['trn'], incidentID, datetime.now(), ticketStatus)
             print(f"\nTICKET OBJECT CREATED")
             # SET NEW FILE PATH TO ./uploads/issued
             imgPath = os.path.join(app.config['ISSUED_FOLDER'], imgName)
@@ -494,10 +486,10 @@ def getFlaggedTicket(ticketID, ticketStatus):   # May use either ticketID or inc
     })
 
 
-@app.route("/api/issue", methods=["POST"])
+@app.route("/api/issue/upload", methods=["POST"])
 @login_required
 @requires_auth
-def issueTicket():
+def issue_via_upload():
     """ Add a new offender """
 
     form = IssueTicketForm()    # TICKET containing all ticket-related data; vehicleowner, vehicle, traffic cam, tax authority
@@ -617,13 +609,14 @@ def issueTicket():
             # CHECK TO SEE WHETHER OR NOT THE VEHICLE OWNER HAS AN EMAIL ADDRESS ON FILE
             emailAddress = ownerObj['email']
             if emailAddress != '':
-                #sendEmail(f'http://localhost:8080/issued/{registrationNumber}_{imgName}',[emailAddress])
+                incidentID = incidentObj['id']
+                sendEmail(f'http://localhost:8080/issued/{incidentID}',[emailAddress])
                 ticketStatus = f"ISSUED VIA ({emailAddress})"
                 print(f"\nTICKET STATUS: {ticketStatus}")
                 # Create the Ticket and save to JETS' Database/Ticket table
                 # Ticket status will determine whether or not the ticket will apprear under the notifications table
                 print(f"\nCREATING AN ISSUED TICKET FOR DATABASE")
-                ticket = IssuedTicket(ownerObj['trn'], incidentObj['id'], datetime.now(), ticketStatus)
+                ticket = IssuedTicket(ownerObj['trn'], incidentID, datetime.now(), ticketStatus)
                 print(f"\nTICKET OBJECT CREATED")
                 # SET NEW FILE PATH TO ./uploads/issued
                 imgPath = os.path.join(app.config['ISSUED_FOLDER'], imgName)
@@ -637,33 +630,133 @@ def issueTicket():
                 # SET NEW FILE PATH TO ./uploads/flagged
                 imgPath = os.path.join(app.config['FLAGGED_FOLDER'], imgName)
 
-            print(f"\nCOMMITTING TICKET TO DB")
-            db_commit(ticket)
-            db.session.refresh(ticket)
+                print(f"\nCOMMITTING TICKET TO DB")
+                db_commit(ticket)
+                db.session.refresh(ticket)
 
-            #ASSIGN FILE PATH & MOVE FILE FROM ./uploads to ./imgpath
-            incidentObj['image'] = imgPath
-            os.rename(os.path.join(app.config['UPLOADS_FOLDER'], imgName),imgPath)
+                #ASSIGN FILE PATH & MOVE FILE FROM ./uploads to ./imgpath
+                incidentObj['image'] = imgPath
+                os.rename(os.path.join(app.config['UPLOADS_FOLDER'], imgName),imgPath)
 
-            # FORMAT DATE ISSUED
-            dateIssued = str(ticket.datetime.strftime(USR_DATETIME_FORMAT))
+                # FORMAT DATE ISSUED
+                dateIssued = str(ticket.datetime.strftime(USR_DATETIME_FORMAT))
 
-            ticketData = {
-                'vehicleOwner': ownerObj,
-                'vehicle': vehicleObj,
-                'offence': offenceObj,
-                'incident': incidentObj,
-                'location': locationObj,
-                'status': ticket.status,
-                'dateIssued': dateIssued,
-                'id': ticket.id
-            }
-            print(f"\nSENDING DATA TO VIEW...\n")
-            return jsonify(ticketData)
+                ticketData = {
+                    'vehicleOwner': ownerObj,
+                    'vehicle': vehicleObj,
+                    'offence': offenceObj,
+                    'incident': incidentObj,
+                    'location': locationObj,
+                    'status': ticket.status,
+                    'dateIssued': dateIssued,
+                    'id': ticket.id
+                }
+                print(f"\nSENDING DATA TO VIEW...\n")
+                return jsonify(ticketData)
     print('\nForm not validated')
     print(form.errors)
     return generate_empty_ticket()
 
+    
+@app.route("/api/issue/flaggedImage", methods=["GET"])
+@login_required
+@requires_auth
+def issueFlaggedImage():
+
+    registrationNumber = request.args.get('registrationNumber')
+    ticketID = request.args.get('ticketID')
+    print('\nReceived:',registrationNumber, ticketID)
+    print(f"\nGETTING VEHICLE & VEHICLE OWNER FROM DB")
+    # Get Vehicle & Vehicle Owner
+    owner = VehicleOwner.query.filter_by(licenseplate=registrationNumber).first()
+    print('\nOwner',owner)
+    vehicle = Vehicle.query.filter_by(licenseplate=registrationNumber).first()
+
+    # RUN EXCEPTION HANDLER IF Registration # was incorrectly identified
+    if owner == None or vehicle == None:
+        print(f"\nNO VEHICLE OR VEHICLE OWNER FOUND")
+        return generate_empty_ticket()
+
+    print(f"\nVEHICLE & VEHICLE OWNER FOUND")
+    ownerObj = obj_to_dict(owner)
+    vehicleObj = obj_to_dict(vehicle)
+
+    currentTicket = getFlaggedTicket(int(ticketID), 'IMAGE PROCESSING ERROR').get_json()
+    print('\nTicket Found')
+
+    # Convert objects from query results to python dictionaries
+    incidentObj = currentTicket['incident']
+    print('\nIncident:',incidentObj)
+    offenceObj = currentTicket['offence']
+    print('\nOffence:',offenceObj)
+    locationObj = currentTicket['location']
+    print('\nLocation:',locationObj)
+
+    print(f"\nFORMATTING DATA FOR VIEW")
+    # Format dates, fine and image path for frontend
+    ownerObj['expdate'] = str(ownerObj['expdate'].strftime(USR_DATE_FORMAT))
+    vehicleObj['expdate'] = str(vehicleObj['expdate'].strftime(USR_DATE_FORMAT))
+    ownerObj['dob'] = str(ownerObj['dob'].strftime(USR_DATE_FORMAT))
+    imgName = incidentObj['image'].split('/')[-1]
+    print(f"\nFORMATTING COMPLETE. {imgName}")
+
+    # DECLARE NEW TICKET & IMAGE PATH
+    newTicket, imgPath = None, ''
+
+    # CHECK TO SEE WHETHER OR NOT THE VEHICLE OWNER HAS AN EMAIL ADDRESS ON FILE
+    emailAddress = ownerObj['email']
+    if emailAddress != '':
+        incidentID = incidentObj['id']
+        sendEmail(f'http://localhost:8080/issued/{incidentID}',[emailAddress])
+        ticketStatus = f"ISSUED VIA ({emailAddress})"
+        print(f"\nTICKET STATUS: {ticketStatus}")
+        # Create the Ticket and save to JETS' Database/Ticket table
+        # Ticket status will determine whether or not the ticket will apprear under the notifications table
+        print(f"\nCREATING AN ISSUED TICKET FOR DATABASE")
+        newTicket = IssuedTicket(ownerObj['trn'], incidentID, datetime.now(), ticketStatus)
+        print(f"\nTICKET OBJECT CREATED")
+        # SET NEW FILE PATH TO ./uploads/issued
+        imgPath = os.path.join(app.config['ISSUED_FOLDER'], imgName)
+    else:
+        ticketStatus = 'NO EMAIL ADDRESS ON FILE'
+        print(f"\nTICKET STATUS: {ticketStatus}")
+        print(f"\nCREATING A FLAGGED EMAIL TICKET FOR DATABASE")
+        # Create the Ticket and save to JETS' Database/Ticket table
+        # Ticket status will determine whether or not the ticket will apprear under the notifications table 
+        newTicket = FlaggedEmail(ownerObj['trn'], incidentObj['id'], datetime.now(), ticketStatus)
+        # SET NEW FILE PATH TO ./uploads/flagged
+        imgPath = os.path.join(app.config['FLAGGED_FOLDER'], imgName)
+
+    print(f"\nCOMMITTING NEW TICKET TO DB")
+    db_commit(newTicket)
+    db.session.refresh(newTicket)
+
+    print(f"\nDELETING FLAGGED IMAGE TICKET FROM DB")
+    db.session.delete(FlaggedImage.query.get(int(ticketID)))
+    db.session.commit()
+
+    #ASSIGN FILE PATH & MOVE FILE FROM ./uploads to ./imgpath
+    oldPath = os.path.join(app.config['FLAGGED_FOLDER'], imgName)
+    print(f"\nASSIGNING NEW FILE PATH")
+    #incidentObj['image'] = imgPath
+    print(f"MOVING FILE FROM {oldPath} to {imgPath}")
+    os.rename(oldPath,imgPath)
+
+    # FORMAT DATE ISSUED
+    dateIssued = str(newTicket.datetime.strftime(USR_DATETIME_FORMAT))
+
+    ticketData = {
+        'vehicleOwner': ownerObj,
+        'vehicle': vehicleObj,
+        'offence': offenceObj,
+        'incident': incidentObj,
+        'location': locationObj,
+        'status': newTicket.status,
+        'dateIssued': dateIssued,
+        'id': newTicket.id
+    }
+    print(f"\nSENDING DATA TO VIEW...\n")
+    return jsonify(ticketData)
 
 @app.route("/api/search/tickets", methods=["GET"])
 @login_required
@@ -692,15 +785,6 @@ def searchTickets():
             if len(tickets) == 0:
                 print('\nSearching by location')
                 tickets.extend(search_by_location(query))
-
-    # trnResults = search_by_trn(query)
-    # regNoResults = search_by_reg_no(query)
-    # offenceResults = search_by_offence(query)
-    # regNoResults = search_by_location(query)
-    # tickets.extend(trnResults)
-    # tickets.extend(regNoResults)
-    # tickets.extend(regNoResults)
-    # tickets.extend(regNoResults)
 
     print(tickets)
     ticketObjs = []
@@ -872,14 +956,6 @@ def search_by_location(parish_or_desc):
             flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID==incident.id).all() # Get flagged email tickets using incidentID from incidentIDs
             flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID==incident.id).all() # Get flagged image tickets using incidentID from incidentIDs
     
-
-    # print(locationIDs)
-    # # db.session.query(Location.id).filter(Location.description.like(f'%{parish_or_desc}%')).subquery()
-    # # print(locationIDs)
-    # incidentIDs = db.session.query(Incident.id).filter(Incident.offenceID.in_(locationIDs)).subquery() # Get incidentID using offenceID from offenceCodes
-    # issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID.in_(incidentIDs)) # Get issued tickets using incidentID from incidentIDs
-    # flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID.in_(incidentIDs)) # Get flagged email tickets using incidentID from incidentIDs
-    # flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID.in_(incidentIDs)) # Get flagged image tickets using incidentID from incidentIDs
     tickets.extend(issued)
     tickets.extend(flaggedEmails)
     tickets.extend(flaggedImages)
