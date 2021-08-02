@@ -1019,7 +1019,6 @@ def clear_db_table(table):
     else:
         print(f'\tTable {table} is empty!')  
 
-
 def getFilenames(path):
     '''Returns a list of filenames within the given file path'''
 
@@ -1046,7 +1045,6 @@ def get_random_record(db_table):
     if records == []:
         return None
     return random.choice(records)  # Return a random choice
-
 
 def generate_empty_ticket():
     '''Returns Ticket attributes with empty values'''

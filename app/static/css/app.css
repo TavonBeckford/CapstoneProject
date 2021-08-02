@@ -24,12 +24,17 @@
 
     --bounceEasing: cubic-bezier(0.51, 0.92, 0.24, 1.15);
 }
-
+.alert.table-alert{
+    position: absolute;
+    left: 30rem;
+    bottom: 16.2rem;
+}
 body {
     box-sizing: border-box;
     margin: 0;
     font-family: var(----primaryFont);
     background-color: var(--whitespace);
+    font-size: 15px;
 }
 
 #website-name{
@@ -427,6 +432,7 @@ footer{
 .ticket-header{
     background-color: rgba(25, 62, 97,0.7);
     height: 5rem;
+
 }
 .ticket-header h1{
     font-size: 2rem;
@@ -505,7 +511,7 @@ footer{
     min-width: 50%;
 }
 #snapshot-container{
-    height: 40rem;
+    height: 35rem;
 }
 #snapshot-container > img{
     border-top: 1px solid black;
@@ -712,19 +718,21 @@ footer{
 
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
-
+    .ticket-header h1{
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem !important;
+    }
 }
 
 /* IPAD & LAPTOP */
 @media only screen and (min-width: 768px) {
-    
+
 }
 
 /* DESKTOP */
 @media only screen and (min-width: 992px) {
 
     /* NAVIGATION */
-    
 
     /* HOME PAGE */
     
@@ -741,13 +749,16 @@ footer{
     .container {
         max-width: 1260px;
     }
+    .ticket-header h1{
+        font-size: 2rem;
+    }
 }
 
 
 /******FLASH MESSAGE******/
 .flash{
     background-color: #28a745;
-    width: fit-content;
+    width: fit-content !important;
     border-radius: 0.25rem !important;
     color: white;
     padding: 0.5rem;

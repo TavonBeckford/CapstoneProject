@@ -312,14 +312,13 @@ const Offenders = {
   name: 'Offenders',
   template: `
     <div id="offenders-page-container" class="">
-
-      <div class='controls-container d-flex justify-content-between pt-3'>
-        <search-bar></search-bar>
-        <transition name="fade" class="mt-5">
-          <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+      <transition name="fade" class="mt-5">
+          <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert table-alert">
               {{ flashMessage }}
           </div>
         </transition>
+      <div class='controls-container d-flex justify-content-between pt-3'>
+        <search-bar></search-bar>
         <div class='buttons d-flex'>
           <simulate-btn @click=simulateOffender></simulate-btn>
           <reset-btn @click='resetSimulation' class='ml-4'></reset-btn>
@@ -422,16 +421,22 @@ const Offenders = {
       })
       .then(function (offenceData) {
         if(offenceData['id'] !== '#'){
-          console.log('SIMULATED');
-          if(offenceData['status'] === 'IMAGE PROCESSING ERROR' || offenceData['status'] === 'NO EMAIL ADDRESS ON FILE' ){
-              console.log('PUSHED TO NOTIFICATIONS');
-              self.$router.push(`/flagged`);
+          console.log('SIMULATING TRAFFIC OFFENDER');
+          let message = '';
+          if(offenceData['status'] === 'IMAGE PROCESSING ERROR'){
+            message = 'NOTIFICATION: IMAGE PROCESSING ERROR';
+            self.$router.push(`/flagged`);
+          } else if(offenceData['status'] === 'NO EMAIL ADDRESS ON FILE'){
+            message = 'NOTIFICATION: NO EMAIL ADDRESS ON FILE';
+            self.$router.push(`/flagged`);
           } else {
               console.log(`TICKET STATUS: ${offenceData['status']}`);
               self.updateTable(offenceData);
           }
+          sessionStorage.setItem('flash', message);
           console.log(offenceData);
         } else {
+          sessionStorage.setItem('flash', 'NO MORE IMAGES TO SERVE');
           console.log('NO MORE IMAGES TO SERVE');
         }
       })
@@ -477,7 +482,7 @@ const Notifications = {
   template: `
     <div id="notifications-page-container" class="">
       <transition name="fade" class="mt-5">
-        <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+        <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert table-alert">
             {{ flashMessage }}
         </div>
       </transition>
@@ -1042,24 +1047,24 @@ const ViewFlagged = {
     </div>
   `,
   data() {
-      return {
-        ticket: {
-          'vehicleOwner': '',
-          'vehicle': '',
-          'offence': '',
-          'incident': '',
-          'location': '',
-          'status': '',
-          'dateFlagged': '',
-          'id': ''
-        },
-        user: sessionStorage.getItem('jets_user'),
-        flashMessage: sessionStorage.getItem('flash'),
-        displayFlash: false,
-        isSuccess: false,
-        alertSuccessClass: 'alert-success',
-        alertErrorClass: 'alert-danger'
-      }
+    return {
+      ticket: {
+        'vehicleOwner': '',
+        'vehicle': '',
+        'offence': '',
+        'incident': '',
+        'location': '',
+        'status': '',
+        'dateFlagged': '',
+        'id': ''
+      },
+      user: sessionStorage.getItem('jets_user'),
+      flashMessage: sessionStorage.getItem('flash'),
+      displayFlash: false,
+      isSuccess: false,
+      alertSuccessClass: 'alert-success',
+      alertErrorClass: 'alert-danger'
+    }
   },
   created(){
     if (!isLoggedIn()){
@@ -1143,15 +1148,12 @@ const ViewFlagged = {
           // IF TICKET WAS SUCCESSFULLY ISSUED
           if(response['status'].search('ISSUED') >= 0){
             console.log(response['status']);  
+            self.$router.push(`/issued/${response['id']}`);
             sessionStorage.setItem('flash',response['status']);
-            //self.$router.push(`/issued`);
-            window.history.back();
           } else {
             console.log(response['status']); 
+            self.$router.push(`/flagged/${response['id']}`);
             sessionStorage.setItem('flash',response['status']);
-            //self.$router.push('/flagged');
-            window.history.back();
-
           }
         }
         console.log(response)    
@@ -1185,7 +1187,7 @@ const ManualIssue = {
           </div>
         
           <div class="form-group sm-padding-right">
-            <label for="location">Location</label><br>
+            <label for="location">Location Description</label><br>
             <input type="text" name="location" class='form-control' required/> 
           </div>
           <div class="form-group">
@@ -1267,11 +1269,12 @@ const ManualIssue = {
       })
       .then(function (jsonResponse) {
           //self.offender_data = jsonResponse
-          sessionStorage.setItem('flash', "Offender succesfully added")
           if (jsonResponse['status'].search('@') > 0) {
-            self.$router.push('/issued')
+            self.$router.push('/issued');
+            sessionStorage.setItem('flash', "Ticket succesfully issued");
           } else {
-            self.$router.push('/')
+            self.$router.push('/');
+            sessionStorage.setItem('flash', "Ticket could not be issued");
           }
           
       })
