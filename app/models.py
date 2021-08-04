@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash
 from flask_login._compat import unicode
 import random as r
 
+'''JETS API'''
 class User(db.Model):
     __tablename__ = 'User'
 
@@ -43,8 +44,109 @@ class User(db.Model):
 
     def setPassword(self, password):
         self.password = generate_password_hash(password + self.salt, method='pbkdf2:sha256')
-        
 
+'''JETS API'''
+class Incident(db.Model):
+    __tablename__ = 'Incident'
+
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)   # TRAFFIC CAM API
+    time = db.Column(db.Time, nullable=False)   # TRAFFIC CAM API
+    locationID = db.Column(db.Integer, db.ForeignKey('Location.id'), nullable=False)    # TRAFFIC CAM API
+    offenceID = db.Column(db.String(4), db.ForeignKey('Offence.code'), nullable=False)  # TRAFFIC CAM API / # TAX AUTHORITY API
+    image = db.Column(db.String(50), nullable=False)   # TRAFFIC CAM API
+
+
+    def __init__(self, date, time, locationID, offenceID, imageName):
+        self.date = date
+        self.time = time
+        self.locationID = locationID
+        self.offenceID = offenceID
+        self.image = imageName
+
+    def get_id(self):
+        try:
+            return unicode(self.id)  # python 2 support
+        except NameError:
+            return str(self.id)  # python 3 support
+
+    def __repr__(self):
+        return '<Incident %r %r>' % (self.id, self.image)
+
+'''JETS API'''
+class IssuedTicket(db.Model):
+    __tablename__ = 'IssuedTicket'
+
+    id = db.Column(db.Integer, primary_key=True)
+    trn = db.Column(db.String(10), db.ForeignKey('VehicleOwner.trn'), nullable=False)
+    incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
+    datetime = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(70), nullable=False)
+
+    def __init__(self, trn, incidentID, datetimeIssued, status):
+        self.trn = trn
+        self.incidentID = incidentID
+        self.datetime = datetimeIssued
+        self.status = status
+ 
+    def get_id(self):
+        try:
+            return unicode(self.id)  # python 2 support
+        except NameError:
+            return str(self.id)  # python 3 support
+
+    def __repr__(self):
+        return '<IssuedTicket %r %r %r>' % (self.id, self.trn, self.status)
+
+'''JETS API'''
+class FlaggedEmail(db.Model):
+    __tablename__ = 'FlaggedEmail'
+
+    id = db.Column(db.Integer, primary_key=True)
+    trn = db.Column(db.String(10), db.ForeignKey('VehicleOwner.trn'), nullable=False)
+    incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
+    datetime = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(30), nullable=False)
+
+    def __init__(self, trn, incidentID, datetimeFlagged, status):
+        self.trn = trn
+        self.incidentID = incidentID
+        self.datetime = datetimeFlagged
+        self.status = status
+ 
+    def get_id(self):
+        try:
+            return unicode(self.id)  # python 2 support
+        except NameError:
+            return str(self.id)  # python 3 support
+
+    def __repr__(self):
+        return '<FlaggedEmail %r %r %r>' % (self.id, self.trn, self.status)
+
+'''JETS API'''
+class FlaggedImage(db.Model):
+    __tablename__ = 'FlaggedImage'
+
+    id = db.Column(db.Integer, primary_key=True)
+    incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
+    datetime = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(30), nullable=False)
+
+    def __init__(self, incidentID, datetimeFlagged, status):
+        self.incidentID = incidentID
+        self.datetime = datetimeFlagged
+        self.status = status
+ 
+    def get_id(self):
+        try:
+            return unicode(self.id)  # python 2 support
+        except NameError:
+            return str(self.id)  # python 3 support
+
+    def __repr__(self):
+        return '<FlaggedImage %r %r>' % (self.id, self.status)
+
+'''TAX AUTHORITY API'''        
 class Vehicle(db.Model):
     __tablename__ = 'Vehicle'
 
@@ -70,6 +172,7 @@ class Vehicle(db.Model):
     def __repr__(self):
         return '<Vehicle %r %r %r>' % (self.make, self.model, self.licenseplate)
 
+'''TAX AUTHORITY API''' 
 class VehicleOwner(db.Model):
     __tablename__ = 'VehicleOwner'
 
@@ -107,6 +210,7 @@ class VehicleOwner(db.Model):
     def __repr__(self):
         return '<Vehicle Owner %r %r>' % (self.fname, self.lname)
 
+'''TAX AUTHORITY API''' 
 class Offence(db.Model):
     __tablename__ = 'Offence'
 
@@ -131,33 +235,7 @@ class Offence(db.Model):
     def __repr__(self):
         return '<Offence %r %r >' % (self.code, self.description)
 
-class Incident(db.Model):
-    __tablename__ = 'Incident'
-
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
-    time = db.Column(db.Time, nullable=False)
-    locationID = db.Column(db.Integer, db.ForeignKey('Location.id'), nullable=False)
-    offenceID = db.Column(db.String(4), db.ForeignKey('Offence.code'), nullable=False)
-    image = db.Column(db.String(50), nullable=False)
-
-
-    def __init__(self, date, time, locationID, offenceID, imageName):
-        self.date = date
-        self.time = time
-        self.locationID = locationID
-        self.offenceID = offenceID
-        self.image = imageName
-
-    def get_id(self):
-        try:
-            return unicode(self.id)  # python 2 support
-        except NameError:
-            return str(self.id)  # python 3 support
-
-    def __repr__(self):
-        return '<Incident %r %r>' % (self.id, self.image)
-
+'''TRAFFIC CAM API'''
 class Location(db.Model):
     __tablename__ = 'Location'
 
@@ -177,77 +255,6 @@ class Location(db.Model):
 
     def __repr__(self):
         return '<Location %r %r >' % (self.description, self.parish)
-
-
-class IssuedTicket(db.Model):
-    __tablename__ = 'IssuedTicket'
-
-    id = db.Column(db.Integer, primary_key=True)
-    trn = db.Column(db.String(10), db.ForeignKey('VehicleOwner.trn'), nullable=False)
-    incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
-    datetime = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(70), nullable=False)
-
-    def __init__(self, trn, incidentID, datetimeIssued, status):
-        self.trn = trn
-        self.incidentID = incidentID
-        self.datetime = datetimeIssued
-        self.status = status
- 
-    def get_id(self):
-        try:
-            return unicode(self.id)  # python 2 support
-        except NameError:
-            return str(self.id)  # python 3 support
-
-    def __repr__(self):
-        return '<IssuedTicket %r %r %r>' % (self.id, self.trn, self.status)
-
-class FlaggedEmail(db.Model):
-    __tablename__ = 'FlaggedEmail'
-
-    id = db.Column(db.Integer, primary_key=True)
-    trn = db.Column(db.String(10), db.ForeignKey('VehicleOwner.trn'), nullable=False)
-    incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
-    datetime = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(30), nullable=False)
-
-    def __init__(self, trn, incidentID, datetimeFlagged, status):
-        self.trn = trn
-        self.incidentID = incidentID
-        self.datetime = datetimeFlagged
-        self.status = status
- 
-    def get_id(self):
-        try:
-            return unicode(self.id)  # python 2 support
-        except NameError:
-            return str(self.id)  # python 3 support
-
-    def __repr__(self):
-        return '<FlaggedEmail %r %r %r>' % (self.id, self.trn, self.status)
-
-class FlaggedImage(db.Model):
-    __tablename__ = 'FlaggedImage'
-
-    id = db.Column(db.Integer, primary_key=True)
-    incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
-    datetime = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(30), nullable=False)
-
-    def __init__(self, incidentID, datetimeFlagged, status):
-        self.incidentID = incidentID
-        self.datetime = datetimeFlagged
-        self.status = status
- 
-    def get_id(self):
-        try:
-            return unicode(self.id)  # python 2 support
-        except NameError:
-            return str(self.id)  # python 3 support
-
-    def __repr__(self):
-        return '<FlaggedImage %r %r>' % (self.id, self.status)
 
 
 class SaltGenerator():

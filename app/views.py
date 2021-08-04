@@ -498,6 +498,8 @@ def issue_via_upload():
 
     print('\nReceived Issue Ticket Form')
 
+    print(form)
+
     if form.validate_on_submit():
         print('\nForm has been validated')
         # include security checks #
@@ -632,29 +634,29 @@ def issue_via_upload():
                 # SET NEW FILE PATH TO ./uploads/flagged
                 imgPath = os.path.join(app.config['FLAGGED_FOLDER'], imgName)
 
-                print(f"\nCOMMITTING TICKET TO DB")
-                db_commit(ticket)
-                db.session.refresh(ticket)
+            print(f"\nCOMMITTING TICKET TO DB")
+            db_commit(ticket)
+            db.session.refresh(ticket)
 
-                #ASSIGN FILE PATH & MOVE FILE FROM ./uploads to ./imgpath
-                incidentObj['image'] = imgPath
-                os.rename(os.path.join(app.config['UPLOADS_FOLDER'], imgName),imgPath)
+            #ASSIGN FILE PATH & MOVE FILE FROM ./uploads to ./imgpath
+            incidentObj['image'] = imgPath
+            os.rename(os.path.join(app.config['UPLOADS_FOLDER'], imgName),imgPath)
 
-                # FORMAT DATE ISSUED
-                dateIssued = str(ticket.datetime.strftime(USR_DATETIME_FORMAT))
+            # FORMAT DATE ISSUED
+            dateIssued = str(ticket.datetime.strftime(USR_DATETIME_FORMAT))
 
-                ticketData = {
-                    'vehicleOwner': ownerObj,
-                    'vehicle': vehicleObj,
-                    'offence': offenceObj,
-                    'incident': incidentObj,
-                    'location': locationObj,
-                    'status': ticket.status,
-                    'dateIssued': dateIssued,
-                    'id': ticket.id
-                }
-                print(f"\nSENDING DATA TO VIEW...\n")
-                return jsonify(ticketData)
+            ticketData = {
+                'vehicleOwner': ownerObj,
+                'vehicle': vehicleObj,
+                'offence': offenceObj,
+                'incident': incidentObj,
+                'location': locationObj,
+                'status': ticket.status,
+                'dateIssued': dateIssued,
+                'id': ticket.id
+            }
+            print(f"\nSENDING DATA TO VIEW...\n")
+            return jsonify(ticketData)
     print('\nForm not validated')
     print(form.errors)
     return generate_empty_ticket()
@@ -855,6 +857,11 @@ def searchTickets():
                 print('\nSearching by location')
                 tickets.extend(search_by_location(query))
 
+                # IF NOT FOUND USING OFFENCE- TRY LOCATION
+                if len(tickets) == 0:
+                    print('\nSearching by date and time')
+                    tickets.extend(search_by_datetime(query))
+
     print(tickets)
     ticketObjs = []
     for ticket in tickets:
@@ -1025,6 +1032,34 @@ def search_by_location(parish_or_desc):
             flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID==incident.id).all() # Get flagged email tickets using incidentID from incidentIDs
             flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID==incident.id).all() # Get flagged image tickets using incidentID from incidentIDs
     
+    tickets.extend(issued)
+    tickets.extend(flaggedEmails)
+    tickets.extend(flaggedImages)
+    return tickets
+
+def search_by_datetime(datetime):
+    tickets = []
+
+    #locationIDs = db.session.query(Location.id).filter(Location.parish.like(f'%{parish_or_desc}%')).subquery() #
+    incidentIDs = db.session.query(Incident.id).filter(Incident.date.like(f'%{datetime}%')).subquery() # Get incidentIDs using datetime
+    issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID.in_(incidentIDs)) # Get issued tickets using incidentID from incidentIDs
+    flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID.in_(incidentIDs)) # Get flagged email tickets using incidentID from incidentIDs
+    flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID.in_(incidentIDs)) # Get flagged image tickets using incidentID from incidentIDs
+    tickets.extend(issued)
+    tickets.extend(flaggedEmails)
+    tickets.extend(flaggedImages)
+    if len(tickets) > 0:
+        print('\nFound by date')
+        return tickets
+
+    print('\nNo records found by date. Searching by time')
+
+    incidents = db.session.execute(f"select * from Incident where time like '%{datetime}%'")
+    for incident in incidents:
+        issued = db.session.query(IssuedTicket).filter(IssuedTicket.incidentID==incident.id).all() # Get issued tickets using incidentID from incidentIDs
+        flaggedEmails = db.session.query(FlaggedEmail).filter(FlaggedEmail.incidentID==incident.id).all() # Get flagged email tickets using incidentID from incidentIDs
+        flaggedImages = db.session.query(FlaggedImage).filter(FlaggedImage.incidentID==incident.id).all() # Get flagged image tickets using incidentID from incidentIDs
+
     tickets.extend(issued)
     tickets.extend(flaggedEmails)
     tickets.extend(flaggedImages)

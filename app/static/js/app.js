@@ -1306,6 +1306,7 @@ const ManualIssue = {
       })
       .then(function (jsonResponse) {
           //self.offender_data = jsonResponse
+
           if (jsonResponse['status'].search('@') > 0) {
             self.$router.push('/issued');
             sessionStorage.setItem('flash', "Ticket succesfully issued");
@@ -1370,7 +1371,7 @@ const SearchResults = {
         <h3 class='mt-3'>
           <span v-if='tickets.length === 0' class='search-count'>No Records Found</span>
           <span v-else-if='tickets.length === 1' class='search-count'>1 Record Found</span>
-          <span v-else class='search-count'>{{tickets.length}} Records Found</span>
+          <span v-else class='search-status'>{{tickets.length}} Records Found</span>
         </h3>
       </div>
     </div>
@@ -1419,7 +1420,7 @@ const SearchResults = {
             console.log(error);
         });
       } else {
-        console.log('Search query length must have at least 3 characters')
+        console.log('Query length should be at least 3 characters long');
       }
     },
     viewTicket(ticketID,status){
@@ -1582,6 +1583,9 @@ app.component('app-header', {
           <li class="nav-item dynamic-link">
             <router-link class="nav-link" to="/archives">Archives</router-link>
           </li>
+          <li v-if='isAdmin()' class="nav-item dynamic-link" id='stat-route'>
+            <router-link class="nav-link" to="/stats">Stats</router-link>
+          </li>
         </ul>
       </div>
       <ul id="user-menu" class="navbar-nav ml-auto">
@@ -1623,12 +1627,17 @@ app.component('app-header', {
     // If no user data exists in session storage
     if(!this.userExists()){
       // Assign default user
-      this.user = {'id': -1, 'name':'default'};
+      this.user = {'id': -1, 'name':'default','isAdmin':'False'};
+    } else {
+      this.user = JSON.parse(sessionStorage.getItem('jets_user'));
     }
   },
   methods: {
     userExists(){
       return sessionStorage.getItem('jets_user') !== null;
+    },
+    isAdmin(){
+      return this.user.isAdmin === 'True';
     }
   }
   
@@ -2087,6 +2096,7 @@ const routes = [
     { path: '/issueTicket', component: ManualIssue },
     { path: '/searchResults', component: SearchResults },
     { path: '/accountSettings', component: AccountSettings },
+    { path: '/stats', component: AccountSettings },
 
     // This is a catch all route in case none of the above matches
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound }
