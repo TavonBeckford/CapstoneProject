@@ -506,7 +506,7 @@ def issue_via_upload():
 
 
         # INCIDENT INFORMATION
-        date = request.form['date'].split('/')
+        date = request.form['date'].split('-')
         date = datetime(int(date[0]), int(date[1]), int(date[2])).strftime(SYS_DATE_FORMAT)
         print('\nDate:', date)
         time = request.form['time']
@@ -1374,16 +1374,21 @@ def populateDatabase():
     '''DATABASE INSERTS'''
 
     print('\nPOPULATING USER DB...\n')
-    admin = User('Damion Lawson','admin','True')
 
-    officer1 = User('Johanna Thompson-Whyte','password123')
-    officer2 = User('Andrew Black','password123')
+    offence1 = Offence('Exceeding the speed limit > 10 kmph', 'E200', 500, 1)
+    offence2 = Offence('Exceeding the speed limit > 50 kmph', 'E300', 7000, 4)
+    offence3 = Offence('Exceeding the speed limit > 80 kmph', 'E400', 10000, 7)
+    # admin = User('Damion Lawson','admin','True')
 
-    db.session.add(admin)
-    db.session.add(officer1)
-    db.session.add(officer2)
+    # officer1 = User('Johanna Thompson-Whyte','password123')
+    # officer2 = User('Andrew Black','password123')
+
+    # db.session.add(admin)
+    db.session.add(offence1)
+    db.session.add(offence2)
+    db.session.add(offence3)
     db.session.commit()
-    print('\nUSER DB HAS BEEN POPULATED...\n')
+    
 
     '''vehicle1 = Vehicle('9518JK', 'Toyota', 'Belta', 'White', 2009, 'JV390145', 'Sedan', '2022-07-11')
     vehicleOwner1 = VehicleOwner('234351389','Anne','Arden','Ramirez','58 Killarney Rd, Ocho Rios, St.Ann','St. Thomas','Jamaica','testable876@gmail.com','1985-5-21','Female','9518JK','Jamaica','2024-09-25','General')
@@ -1457,6 +1462,7 @@ def populateDatabase():
     db.session.commit()
     print('ADDED LOCATIONS TO DB!') '''
 
+    print('\nUSER DB HAS BEEN POPULATED...\n')
 
 ###
 # The functions below should be applicable to all Flask apps.
