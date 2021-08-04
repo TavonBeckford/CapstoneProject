@@ -176,7 +176,10 @@ const Login = {
               </div>
               <div class="form-group ml-5">
                 <label for="password" class="mt-3">Password</label>
-                <input type="password" name="password" class='form-control' required/> 
+                <div class='d-flex'>
+                  <img src="/static/assets/visibility.svg" alt="Visibility Icon" class='mr-2' @click='viewPassword'>
+                  <input type="password" name="password" class='form-control' id='password-field' required/>
+                </div>
               </div>
               <button type="submit" name="submit-btn" class="btn submit-button py-1 mx-auto mt-3">Sign in</button>
             </form>
@@ -260,6 +263,14 @@ const Login = {
       .catch(function (error) {
           console.log(error);
       });
+    },
+    viewPassword(){
+      let passwordField = document.getElementById("password-field");
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+      } else {
+        passwordField.type = "password";
+      }
     }
   }
 };
