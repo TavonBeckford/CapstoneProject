@@ -57,7 +57,10 @@ const Register = {
               </div>
               <div class="form-group ml-5">
                 <label for="password" class="mt-3">Password</label>
-                <input type="password" name="password" class='form-control' required/> 
+                <div class='d-flex'>
+                  <img src="/static/assets/visibility_off.svg" alt="Visibility Icon" class='mr-2' @click='togglePassword' id='visibility-icon'>
+                  <input type="password" name="password" class='form-control' id='password-field' required/>
+                </div>
               </div>
               <div class="form-group d-flex align-items-center justify-content-center mt-2">
                 <input type="checkbox" name="isAdmin" class='form-control' id='isAdminCheckbox'/>
@@ -149,6 +152,19 @@ const Register = {
       .catch(function (error) {
           console.log(error);
       });
+    },
+    togglePassword(){
+      let passwordField = document.getElementById("password-field");
+      let visibilityIcon = document.getElementById("visibility-icon");
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+        passwordField.style.letterSpacing = '2px';
+        visibilityIcon.src="/static/assets/visibility.svg";
+      } else {
+        passwordField.type = "password";
+        passwordField.style.letterSpacing = '0.35rem';
+        visibilityIcon.src="/static/assets/visibility_off.svg";
+      }
     }
   }
 };
@@ -177,7 +193,7 @@ const Login = {
               <div class="form-group ml-5">
                 <label for="password" class="mt-3">Password</label>
                 <div class='d-flex'>
-                  <img src="/static/assets/visibility.svg" alt="Visibility Icon" class='mr-2' @click='viewPassword'>
+                  <img src="/static/assets/visibility_off.svg" alt="Visibility Icon" class='mr-2' @click='togglePassword' id='visibility-icon'>
                   <input type="password" name="password" class='form-control' id='password-field' required/>
                 </div>
               </div>
@@ -242,6 +258,9 @@ const Login = {
               console.log('No Web Storage support..');
             }
             self.$router.push('/flagged');
+            setTimeout(function() {
+              window.location.reload();
+            }, 0);
             sessionStorage.setItem('flash',jsonResponse['message']);
             document.getElementById('username').innerHTML = jsonResponse['user'].name
           } else {
@@ -251,12 +270,7 @@ const Login = {
               setTimeout(function() { 
                 self.displayFlash = false;
               }, 3000);
-            } /*else if(jsonResponse['username']){
-              self.flashMessage = jsonResponse['username'][0];
-            } else if(jsonResponse['password']){
-              self.flashMessage = jsonResponse['password'][0];
-            }*/
-            
+            } 
           }
           console.log(jsonResponse);
       })
@@ -264,12 +278,17 @@ const Login = {
           console.log(error);
       });
     },
-    viewPassword(){
+    togglePassword(){
       let passwordField = document.getElementById("password-field");
+      let visibilityIcon = document.getElementById("visibility-icon");
       if (passwordField.type === "password") {
         passwordField.type = "text";
+        passwordField.style.letterSpacing = '2px';
+        visibilityIcon.src="/static/assets/visibility.svg";
       } else {
         passwordField.type = "password";
+        passwordField.style.letterSpacing = '0.35rem';
+        visibilityIcon.src="/static/assets/visibility_off.svg";
       }
     }
   }
@@ -416,6 +435,7 @@ const Offenders = {
     },
     simulateOffender() {
       let self = this;
+      let endSimulation = false;
       fetch("/api/simulate", {
           method: 'GET',
           headers: {
@@ -443,12 +463,15 @@ const Offenders = {
           } else {
               console.log(`TICKET STATUS: ${offenceData['status']}`);
               self.updateTable(offenceData);
+              // message = 'A TICKET WAS JUST ISSUED';
+              // window.location.reload();
           }
           sessionStorage.setItem('flash', message);
           console.log(offenceData);
+          flashMessage(this);
         } else {
           sessionStorage.setItem('flash', 'NO MORE IMAGES TO SERVE');
-          console.log('NO MORE IMAGES TO SERVE');
+          window.location.reload();
         }
       })
       .catch(function (error) {
@@ -484,6 +507,9 @@ const Offenders = {
       .catch(function (error) {
           console.log(error);
       });
+    },
+    sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
   }
 };
@@ -752,7 +778,7 @@ const ViewIssued = {
               </div>
               <div class='ticket-field payment-deadline'>
                 <h4 class='field-name'>Payment Deadline</h4>
-                <p class='field-value'>{{ticket.incident.paymentDeadline}}</p>
+                <p class='field-value'>{{ticket.paymentDeadline}}</p>
               </div>
             </div>
           </div>
@@ -1030,7 +1056,7 @@ const ViewFlagged = {
               </div>
               <div class='ticket-field payment-deadline'>
                 <h4 class='field-name'>Payment Deadline</h4>
-                <p class='field-value'>{{ticket.incident.paymentDeadline}}</p>
+                <p class='field-value'>{{ticket.paymentDeadline}}</p>
               </div>
             </div>
           </div>

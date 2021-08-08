@@ -1,4 +1,4 @@
-# Capstone Project (Team Jets)
+# Capstone Project (Team JETS)
 
 # JamaicaEye Ticketing System (JETS)
 

@@ -145,7 +145,7 @@ def deregister():
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     """ Login a user """
-
+ 
     form = LoginForm()
     if form.validate_on_submit():
         # include security checks #
@@ -401,7 +401,7 @@ def getIssuedTicket(ticketID):  # May use either ticketID or incidentID
     ownerObj['trn'] = trioFormatter(ownerObj['trn'], ' ')
 
     # Format data before sending
-    incidentObj['paymentDeadline'] = str((incidentObj['date'] + timedelta(60)).strftime(USR_DATE_FORMAT))
+    incidentObj['paymentDuration'] = str((incidentObj['date'] + timedelta(offenceObj['paymentDuration'])).strftime(USR_DATE_FORMAT))
     incidentObj['date'] = str(incidentObj['date'].strftime(USR_DATE_FORMAT))
     incidentObj['time'] = str(incidentObj['time'].strftime(USR_TIME_FORMAT))
     incidentObj['image'] = os.path.join(app.config['ISSUED_FOLDER'], incidentObj['image'])[1:]
@@ -410,6 +410,9 @@ def getIssuedTicket(ticketID):  # May use either ticketID or incidentID
     # FORMAT DATE ISSUED
     dateIssued = str(ticket.datetime.strftime(USR_DATETIME_FORMAT))
 
+    # SET PAYMENT DEADLINE
+    paymentDeadline = str((ticket.datetime + timedelta(offenceObj['paymentDuration'])).strftime(USR_DATE_FORMAT))
+
     return jsonify({
         'vehicleOwner': ownerObj,
         'vehicle': vehicleObj,
@@ -417,6 +420,7 @@ def getIssuedTicket(ticketID):  # May use either ticketID or incidentID
         'incident': incidentObj,
         'location': locationObj,
         'dateIssued': dateIssued,
+        'paymentDeadline': paymentDeadline,
         'status': ticket.status,
         'id': str(ticket.id).zfill(9)
     })
@@ -470,7 +474,6 @@ def getFlaggedTicket(ticketID, ticketStatus):   # May use either ticketID or inc
     locationObj = obj_to_dict(location)
     
     # Format data before sending
-    incidentObj['paymentDeadline'] = '-'
     incidentObj['date'] = str(incidentObj['date'].strftime(USR_DATE_FORMAT))
     incidentObj['time'] = str(incidentObj['time'].strftime(USR_TIME_FORMAT))
     incidentObj['image'] = os.path.join(app.config['FLAGGED_FOLDER'], incidentObj['image'])[1:]
@@ -483,6 +486,7 @@ def getFlaggedTicket(ticketID, ticketStatus):   # May use either ticketID or inc
         'incident': incidentObj,
         'location': locationObj,
         'dateIssued': '-',
+        'paymentDeadline': '-',
         'status': ticket.status,
         'id': str(ticket.id).zfill(9)
     })
@@ -1375,44 +1379,44 @@ def populateDatabase():
 
     print('\nPOPULATING USER DB...\n')
 
-    offence1 = Offence('Exceeding the speed limit > 10 kmph', 'E200', 500, 1)
-    offence2 = Offence('Exceeding the speed limit > 50 kmph', 'E300', 7000, 4)
-    offence3 = Offence('Exceeding the speed limit > 80 kmph', 'E400', 10000, 7)
-    # admin = User('Damion Lawson','admin','True')
 
-    # officer1 = User('Johanna Thompson-Whyte','password123')
-    # officer2 = User('Andrew Black','password123')
+    '''admin = User('Damion Lawson','admin','True')
 
-    # db.session.add(admin)
-    db.session.add(offence1)
-    db.session.add(offence2)
-    db.session.add(offence3)
-    db.session.commit()
+    officer1 = User('Chris Russell','password123')
+    officer2 = User('Andrew Black','password123')
+
+    db.session.add(admin)'''
     
 
-    '''vehicle1 = Vehicle('9518JK', 'Toyota', 'Belta', 'White', 2009, 'JV390145', 'Sedan', '2022-07-11')
-    vehicleOwner1 = VehicleOwner('234351389','Anne','Arden','Ramirez','58 Killarney Rd, Ocho Rios, St.Ann','St. Thomas','Jamaica','testable876@gmail.com','1985-5-21','Female','9518JK','Jamaica','2024-09-25','General')
+    vehicle1 = Vehicle('9518JK', 'Toyota', 'Belta', 'White', 2009, 'JV390145', 'Sedan', '2022-07-11')
+    vehicleOwner1 = VehicleOwner('234351389','Anne','Arden','Ramirez','58 Killarney Rd, Ocho Rios','St.Ann','Jamaica','anne.ramirez@gmail.com','1985-5-21','Female','9518JK','Jamaica','2024-09-25','General')
 
     vehicle2 = Vehicle('8424GR','Toyota','Mark II Tourier','Silver',2003,'CJ128912','Sedan','2022-09-20')
-    vehicleOwner2 = VehicleOwner('168858869','Michael','Nash','Rice','41 Angels Walks Rd, Spanish Town, St. Catherine','Portland','Jamaica','testable876@gmail.com','1991-10-11','Male','8424GR','Jamaica','2025-10-07','General')
+    vehicleOwner2 = VehicleOwner('168858869','Michael','Nash','Rice','41 Angels Walks Rd, Spanish Town','St. Catherine','Jamaica','michael.nash@yahoo.com','1991-10-11','Male','8424GR','Jamaica','2025-10-07','General')
 
-    vehicle3 = Vehicle('DEPMED','Toyota','Prado','Silver',2006,'MK105873','SUV','2022-08-10')
-    vehicleOwner3 = VehicleOwner('123077859','Edward','Isaiah','Winden','13 Mutex Ave, Maypen, Clarendon','St. Catherine','Jamaica','testable876@gmail.com','1983-07-15','Male','DEPMED','Jamaica','2023-01-09','General')
+    vehicle3 = Vehicle('9579JP','Nissan','Tiida','Red',2006,'MK105873','Sedan','2022-08-10')
+    vehicleOwner3 = VehicleOwner('123077859','Jamie','Isaiah','Campbell','13 Mutex Ave, Maypen','Clarendon','Jamaica','jamie.campbell876@gmail.com','1983-07-15','Male','9579JP','Jamaica','2023-01-09','General')
 
     vehicle4 = Vehicle('2445GX','Toyota','Carolla','Silver',2002,'AB781003','Sedan','2022-04-11')
-    vehicleOwner4 = VehicleOwner('103975746','Navuna','Marcia','Evans','33 Watson Street, Mandeville, Manchester','Manchester','Jamaica','testable876@gmail.com','1989-12-15','Female','2445GX','Jamaica','2023-01-18','Private')
+    vehicleOwner4 = VehicleOwner('103975746','Navuna','Marcia','Evans','33 Watson Street, Mandeville','Manchester','Jamaica','navuna_evans@hotmail.com','1989-12-15','Female','2445GX','Jamaica','2023-01-18','Private')
 
     vehicle5 = Vehicle('1206FQ','Toyota','Fortuner','Blue',2007,'RM125548','SUV','2022-06-11')
-    vehicleOwner5 = VehicleOwner('281590140','Willesly','Jehory','Durant','4 Johns Ave, Molynes Rd, Kingston 11','St. Andrew','Jamaica','testable876@gmail.com','2000-11-11','Male','1206FQ','Jamaica','2022-05-14','Private')
+    vehicleOwner5 = VehicleOwner('281590140','Willesly','Jehory','Durant','4 Johns Ave, Molynes Rd, Kingston 11','Kingston','Jamaica','willesly.durant@gmail.com','2000-11-11','Male','1206FQ','Jamaica','2022-05-14','Private')
 
     vehicle6 = Vehicle('6606HW','Toyota','Carolla','Black',1996,'KL323654','Sedan','2022-06-08')
-    vehicleOwner6 = VehicleOwner('267041347','Venice','Anika','Salmon','28 Reeves Ave, Graham Rd, Kingston 12','St. Andrew','Jamaica','testable876@gmail.com','2001-10-18','Female','6606HW','Jamaica','2022-05-14','General')
+    vehicleOwner6 = VehicleOwner('267041347','Venice','Anika','Salmon','28 Reeves Ave, Graham Rd, Kingston 12','Kingston','Jamaica','venice.salmon28@gmail.com','2001-10-18','Female','6606HW','Jamaica','2022-05-14','General')
 
     vehicle7 = Vehicle('3840GF','Toyota','Fielder','Black',2004,'LP830547','Sedan','2022-02-07')
-    vehicleOwner7 = VehicleOwner('185671235','Kevin','Jamie','Bullock','28 West Minister Ave, Garnett Rd, Kingston 3','St. Andrew','Jamaica','testable876@gmail.com','1995-10-28','Male','3840GF','Jamaica','2024-08-19','General')
+    vehicleOwner7 = VehicleOwner('185671235','Kevin','Jamie','Bullock','28 West Minister Ave, Garnett Rd, Kingston 3','Kingston','Jamaica','','1995-10-28','Male','3840GF','Jamaica','2024-08-19','General')
 
-    vehicle8 = Vehicle('4737HA','Toyota','Prado','Silver',2013,'PT124785','SUV','2020-08-01')
-    vehicleOwner8 = VehicleOwner('141158951','Carlton','Omar','Stevens','46 Walkers Dr, Orange Rd, Barbican','Kingston','Jamaica','testable876@gmail.com','1985-12-27','Male','4737HA','Jamaica','2024-08-29','General')
+    vehicle8 = Vehicle('4737HA','Toyota','Prado','Silver',2013,'PT124785','SUV','2022-08-01')
+    vehicleOwner8 = VehicleOwner('141158951','Carlton','Omar','Stevens','46 Walkers Dr, Orange Rd, Barbican','Kingston','Jamaica','carlton_stevens11@yahoo.com','1985-12-27','Male','4737HA','Jamaica','2024-08-29','General')
+    
+    vehicle9 = Vehicle('PK0587','Toyota','Fielder','Black',2015,'AU219303','Wagon','2022-09-29')
+    vehicleOwner9 = VehicleOwner('205810467','Kadisha','Anita','Baker','7 Hopewell Road, Lucea','Hanover','Jamaica','kadisha.baker28@yahoo.com','1982-02-25','Female','PK0587','Jamaica','2023-04-30','General')
+
+    vehicle10 = Vehicle('2926JC','Honda','Accord','Black',2017,'MA742013','Sedan','2022-06-04')
+    vehicleOwner10 = VehicleOwner('187511069','Alvin','Orandi','Green','44 Prosper Road, Grandville','St. Thomas','Jamaica','','1999-03-20','Male','2926JC','Jamaica','2023-05-10','Private')
 
 
     db.session.add(vehicle1)
@@ -1423,16 +1427,21 @@ def populateDatabase():
     db.session.add(vehicle6)
     db.session.add(vehicle7)
     db.session.add(vehicle8)
+    db.session.add(vehicle9)
+    db.session.add(vehicle10)
 
     db.session.commit()
     print('ADDED ADMIN, OFFICERS & VEHICLES TO DATABASE!')
-
-    offence1 = Offence('Failure to obey traffic signal', 'F100', 5000, 8)
-    offence2 = Offence('Exceeding the speed limit', 'E200', 7000, 12)
-
     
+    '''
+    offence1 = Offence('Exceeding the speed limit > 10 kmph', 'E200', 500, 1, 60)
+    offence2 = Offence('Exceeding the speed limit > 50 kmph', 'E300', 7000, 4, 60)
+    offence3 = Offence('Exceeding the speed limit > 80 kmph', 'E400', 10000, 7, 60)
+    offence4 = Offence('Failure to obey traffic signal', 'F100', 5000, 3, 60)
     db.session.add(offence1)
     db.session.add(offence2)
+    db.session.add(offence3)
+    db.session.add(offence4)'''
     db.session.add(vehicleOwner1)
     db.session.add(vehicleOwner2)
     db.session.add(vehicleOwner3)
@@ -1441,16 +1450,20 @@ def populateDatabase():
     db.session.add(vehicleOwner6)
     db.session.add(vehicleOwner7)
     db.session.add(vehicleOwner8)
+    db.session.add(vehicleOwner9)
+    db.session.add(vehicleOwner10)
 
 
     db.session.commit()
-    print('ADDED OFFENCES, VEHICLE OWNERS TO DB!')
-
+    print('ADDED OFFENCES & VEHICLE OWNERS TO DB!')
+    '''
     location1 = Location('27 Constant Spring Road, Kingston 3', 'Kingston')
     location2 = Location('48 Old Hope Road, Kingston 7', 'Kingston')
     location3 = Location('9 Darling Street, Kingston 13', 'Kingston')
-    location4 = Location('31B Mona Road, Kingston 5', 'Kingston')
-    location5 = Location('3 Molynes Road, Kingston 4', 'Kingston')
+    location4 = Location('12B Mona Road, Kingston 5', 'Kingston')
+    location5 = Location('7 Grande Road, Kingston 3', 'Kingston')
+    location6 = Location('1 Ardenne Road, Kingston 8', 'Kingston')
+    location7 = Location('3 Molynes Road, Kingston 4', 'Kingston')
 
     
     db.session.add(location1)
@@ -1458,9 +1471,11 @@ def populateDatabase():
     db.session.add(location3)
     db.session.add(location4)
     db.session.add(location5)
+    db.session.add(location6)
+    db.session.add(location7)
 
     db.session.commit()
-    print('ADDED LOCATIONS TO DB!') '''
+    print('ADDED LOCATIONS TO DB!')'''
 
     print('\nUSER DB HAS BEEN POPULATED...\n')
 

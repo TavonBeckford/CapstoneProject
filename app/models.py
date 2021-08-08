@@ -218,13 +218,14 @@ class Offence(db.Model):
     description = db.Column(db.String(100), nullable=False)
     fine = db.Column(db.Integer, nullable=False)
     points = db.Column(db.Integer, nullable=False)
-    #paymentDuration = db.Column(db.Integer, nullable=False)
+    paymentDuration = db.Column(db.Integer, nullable=False) # Time alloted (in days) for paying ticket
 
-    def __init__(self, description, code, fine, points):
+    def __init__(self, description, code, fine, points, paymentDuration=60):
         self.description = description
         self.code = code
         self.fine = fine
         self.points = points
+        self.paymentDuration = paymentDuration
 
     def get_id(self):
         try:

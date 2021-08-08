@@ -317,11 +317,18 @@ select{
     width: 45%;
 }
 
-
 .form-container{
     background-color: var(--whitespace);
     border-radius: 20px 0 0 20px;
 }
+
+#visibility-icon{
+    width: 1.3rem;
+}
+#password-field{
+    letter-spacing: 0.35rem;
+}
+
 /* END SIGN IN PAGE */
 
 #content-body{
@@ -366,6 +373,7 @@ main.container{
 table thead th{
     border-top: 1px solid var(--accentBorder);
     border-bottom: unset;
+
 }
 table thead {
     background-color: var(--accent2);
