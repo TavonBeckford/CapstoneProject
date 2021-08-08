@@ -146,6 +146,29 @@ class FlaggedImage(db.Model):
     def __repr__(self):
         return '<FlaggedImage %r %r>' % (self.id, self.status)
 
+'''JETS API'''
+class ArchivedTicket(db.Model):
+    __tablename__ = 'ArchivedTicket'
+
+    id = db.Column(db.Integer, primary_key=True)
+    incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
+    datetime = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(70), nullable=False)
+
+    def __init__(self, incidentID, datetimeIssued, status):
+        self.incidentID = incidentID
+        self.datetime = datetimeIssued
+        self.status = status
+ 
+    def get_id(self):
+        try:
+            return unicode(self.id)  # python 2 support
+        except NameError:
+            return str(self.id)  # python 3 support
+
+    def __repr__(self):
+        return '<ArchivedTicket %r %r>' % (self.id, self.status)
+
 '''TAX AUTHORITY API'''        
 class Vehicle(db.Model):
     __tablename__ = 'Vehicle'
