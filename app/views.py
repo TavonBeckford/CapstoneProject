@@ -145,7 +145,7 @@ def deregister():
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     """ Login a user """
- 
+
     form = LoginForm()
     if form.validate_on_submit():
         # include security checks #
@@ -191,12 +191,15 @@ def logout():
 @app.route("/api/simulate", methods=["GET"])
 @login_required
 @requires_auth
-def simulateOffense():
+def simulateOffense():  # pass image name after viewing on front end
     """ Simulate an Offense """
 
-    # SELECT A RANDOM OFFENCE, LOCATION AND IMAGE
-    offence = get_random_record(Offence)
-    location = get_random_record(Location)
+    print('\nGetting random traffic cam data')
+    # SELECT A RANDOM TRAFFIC CAMERA AND IMAGE. QUERY OFFENCE TABLE FOR THE SELECTED VALID CAM OFFENCE
+    trafficCam = get_random_record(TrafficCam)
+    offenceCode = random.choice(trafficCam.validOffences.split())    # Extract the list of valid offences for the selected camera and select a random choice
+    offence = Offence.query.get(offenceCode)
+    location = Location.query.get(trafficCam.locationID)
     image = get_random_file(app.config['UPLOADS_FOLDER'])   # Return a random file from the uploads folder
 
     # IF THERE ARE NO MORE IMAGES IN THE ./uploads FOLDER
@@ -1385,7 +1388,7 @@ def populateDatabase():
     officer1 = User('Chris Russell','password123')
     officer2 = User('Andrew Black','password123')
 
-    db.session.add(admin)'''
+    db.session.add(admin)
     
 
     vehicle1 = Vehicle('9518JK', 'Toyota', 'Belta', 'White', 2009, 'JV390145', 'Sedan', '2022-07-11')
@@ -1433,7 +1436,6 @@ def populateDatabase():
     db.session.commit()
     print('ADDED ADMIN, OFFICERS & VEHICLES TO DATABASE!')
     
-    '''
     offence1 = Offence('Exceeding the speed limit > 10 kmph', 'E200', 500, 1, 60)
     offence2 = Offence('Exceeding the speed limit > 50 kmph', 'E300', 7000, 4, 60)
     offence3 = Offence('Exceeding the speed limit > 80 kmph', 'E400', 10000, 7, 60)
@@ -1441,7 +1443,7 @@ def populateDatabase():
     db.session.add(offence1)
     db.session.add(offence2)
     db.session.add(offence3)
-    db.session.add(offence4)'''
+    db.session.add(offence4)
     db.session.add(vehicleOwner1)
     db.session.add(vehicleOwner2)
     db.session.add(vehicleOwner3)
@@ -1456,7 +1458,7 @@ def populateDatabase():
 
     db.session.commit()
     print('ADDED OFFENCES & VEHICLE OWNERS TO DB!')
-    '''
+
     location1 = Location('27 Constant Spring Road, Kingston 3', 'Kingston')
     location2 = Location('48 Old Hope Road, Kingston 7', 'Kingston')
     location3 = Location('9 Darling Street, Kingston 13', 'Kingston')
@@ -1476,6 +1478,25 @@ def populateDatabase():
 
     db.session.commit()
     print('ADDED LOCATIONS TO DB!')'''
+
+    cam1 = TrafficCam('F100',1)   # valid offences & location
+    cam2 = TrafficCam('F100',2)   # valid offences & location
+    cam3 = TrafficCam('F100',3)   # valid offences & location
+    cam4 = TrafficCam('F100',4)   # valid offences & location
+    cam5 = TrafficCam('F100',7)   # valid offences & location
+    cam6 = TrafficCam('E200 E300 E400',6)   # valid offences & location
+    cam7 = TrafficCam('E200 E300 E400',5)   # valid offences & location
+    db.session.add(cam1)
+    db.session.add(cam2)
+    db.session.add(cam3)
+    db.session.add(cam4)
+    db.session.add(cam5)
+    db.session.add(cam6)
+    db.session.add(cam7)
+
+    db.session.commit()
+
+    print('ADDED TRAFFIC CAMS TO THE DB!')
 
     print('\nUSER DB HAS BEEN POPULATED...\n')
 

@@ -257,6 +257,25 @@ class Location(db.Model):
     def __repr__(self):
         return '<Location %r %r >' % (self.description, self.parish)
 
+class TrafficCam(db.Model):
+    __tablename__ = 'TrafficCam'
+
+    id = db.Column(db.Integer, primary_key=True)
+    validOffences = db.Column(db.String(20), nullable=False)    # e.g 'E200 E300 E400' represents a speedtrap camera; 'F100' represents a stoplight cam
+    locationID = db.Column(db.Integer, db.ForeignKey('Location.id', ondelete='CASCADE'), nullable=False)
+
+    def __init__(self, validOffences, locationID):
+        self.validOffences = validOffences
+        self.locationID = locationID
+ 
+    def get_id(self):
+        try:
+            return unicode(self.id)  # python 2 support
+        except NameError:
+            return str(self.id)  # python 3 support
+
+    def __repr__(self):
+        return '<Traffic Camera %r %r >' % (self.validOffences, self.locationID)
 
 class SaltGenerator():
     '''A random string generator'''
