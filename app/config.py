@@ -9,6 +9,7 @@ class Config(object):
     UPLOADS_FOLDER = './uploads'
     ISSUED_FOLDER = './uploads/issued'
     FLAGGED_FOLDER = './uploads/flagged'
+    ARCHIVES_FOLDER = './uploads/archives'
 
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.mailtrap.io'
     MAIL_PORT = os.environ.get('MAIL_PORT') or '25'

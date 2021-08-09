@@ -612,6 +612,103 @@ const Notifications = {
   }
 };
 
+const Archives = {
+  name: 'Archives',
+  template: `
+    <div id="archives-page-container" class="">
+      <transition name="fade" class="mt-5">
+        <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert table-alert">
+            {{ flashMessage }}
+        </div>
+      </transition>
+      <div class='controls-container d-flex justify-content-between pt-3'>
+        <search-bar></search-bar>
+      </div>
+      <h3 class='mt-3'><b>Archives</b></h3>
+      <table class="table mt-4" id="archives-table">
+        <caption class="sr-only">Archives</caption>
+        <thead>
+          <tr>
+            <th scope="col">Vehicle Owner</th>
+            <th scope="col">Date & Time</th>
+            <th scope="col">Offence Desc.</th>
+            <th scope="col">Registration #</th>
+            <th scope="col">Location</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody v-if='tickets.length > 0' id='archives-table-body'>
+          <tr v-for='ticket in tickets' @click="viewTicket(ticket.id, ticket.status)">
+            <td>{{ticket.vehicleOwner.fname}} {{ticket.vehicleOwner.lname}}</td>
+            <td>{{ticket.incident.date}} {{ticket.incident.time}}</td>
+            <td>{{ticket.offence.description}}</td>
+            <td>{{ticket.vehicle.licenseplate}}</td>
+            <td>{{ticket.location.description}}</td>
+            <td>{{ticket.status}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    `, data() {
+      return {
+        tickets: [],
+        flashMessage: sessionStorage.getItem('flash'),
+        displayFlash: false,
+        isSuccess: false,
+        alertSuccessClass: 'alert-success',
+        alertErrorClass: 'alert-danger'
+      }
+  },
+  created() {
+    if (isLoggedIn()){
+      loginNav()
+      this.fetchOffenders();
+      this.$router.push('/archives');
+      flashMessage(this);
+    }
+    else {
+      logoutNav();
+      this.$router.push('/login');
+    }
+  },
+  methods: {
+    fetchOffenders() {
+      let self = this;
+      fetch("/api/archives", {
+          fetchOffenders: 'GET',
+          headers: {
+              'X-CSRFToken': csrf_token,
+              'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+          },
+          credentials: 'same-origin'
+      })
+      .then(function (response) {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+      })
+      .then(function (offenceData) {
+        console.log(offenceData)  
+        offenceData.forEach((ticket, index) => {
+          console.log(ticket);
+          self.updateTable(ticket);
+        })
+
+      })
+      .catch(function (error) {
+          console.log(error);
+      });
+    },
+    viewTicket(ticketID,status){
+      this.$router.push(`/archives/${ticketID}/${status}`);
+    },
+    updateTable(offenceData){
+      this.tickets.unshift(offenceData);
+    }
+  }
+};
+
 const ViewIssued = {
   name: 'ViewIssued',
   template: `
@@ -794,7 +891,7 @@ const ViewIssued = {
               <p class='field-value'>{{ticket.id}}</p>
             </div>
             <div class='ticket-field'>
-              <h4 class='field-name'>Date Issued</h4>
+              <h4 class='field-name'>Date of Issue</h4>
               <p class='field-value'>{{ticket.dateIssued}}</p>
             </div>
             <div class='ticket-field'>
@@ -899,7 +996,381 @@ const ViewFlagged = {
       </transition>
       <div class="controls d-flex justify-content-end pt-2">
         <issue-btn @issue_ticket=openModal class='issue-btn'></issue-btn>
-        <archive-btn class='archive-btn ml-3'></archive-btn>
+        <archive-btn v-if="ticket.status === 'IMAGE PROCESSING ERROR'" @click=archiveTicket class='archive-btn ml-3'></archive-btn>
+        <print-btn id='print-btn' class='ml-3' @click=printTicket></print-btn>
+      </div>
+      <div id='flagged-ticket-status' class='status-bar rounded-top mt-5 d-flex align-items-center'>
+        <h2 class='mb-0 py-2'>{{ticket.status}}</h2>
+      </div>
+      <div class="ticket">
+        <div class='ticket-header d-flex align-items-center pb-2'>
+          <img src="/static/assets/coat_of_arms.png" alt="Coat of Arms" class='rounded'>
+          <div class='ticket-header-headings d-flex flex-column'>
+            <h1 class='mb-0'>ELECTRONIC TRAFFIC VIOLATION TICKET</h1>
+            <h2 class=''>JAMAICA CONSTABULARY FORCE</h2>
+          </div>
+        </div>
+        <section>
+          <h3>VEHICLE OWNER INFORMATION</h3>
+          <div class='ticket-rows owner'>
+            <div class='ticket-row drivers-license'>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Driver's License Number</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.trn}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Expiration Date</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.expdate}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Type</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.licenseType}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Licensed In</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.licensein}}</p>
+              </div>
+            </div>
+
+            <div class='ticket-row bio'>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Last Name</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.lname}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>First Name</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.fname}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Middle Name</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.mname}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Date of Birth</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.dob}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Gender</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.gender}}</p>
+              </div>
+            </div>
+
+            <div class='ticket-row address'>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Address</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.address}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Country</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.country}}</p>
+              </div>
+              <div class='ticket-field parish-residence'>
+                <h4 class='field-name'>Parish</h4>
+                <p class='field-value'>{{ticket.vehicleOwner.parish}}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section>
+          <h3>VEHICLE INFORMATION</h3>
+          <div class='ticket-rows'>
+            <div class='ticket-row vehicle vehicle-1'>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Type of Vehicle</h4>
+                <p class='field-value'>{{ticket.vehicle.cartype}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Registration Plate No.</h4>
+                <p class='field-value'>{{ticket.vehicle.licenseplate}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>License Disc No.</h4>
+                <p class='field-value'>{{ticket.vehicle.licensediscno}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Expiration Date</h4>
+                <p class='field-value'>{{ticket.vehicle.expdate}}</p>
+              </div>
+            </div>
+
+            <div class='ticket-row vehicle vehicle-2'>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Year</h4>
+                <p class='field-value'>{{ticket.vehicle.year}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Make</h4>
+                <p class='field-value'>{{ticket.vehicle.make}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Model</h4>
+                <p class='field-value'>{{ticket.vehicle.model}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Colour</h4>
+                <p class='field-value'>{{ticket.vehicle.colour}}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section>
+          <h3>OFFENCE INFORMATION</h3>
+          <div class='ticket-rows offence'>
+            <div class='ticket-row offence-1'>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Date of Offence</h4>
+                <p class='field-value'>{{ticket.incident.date}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Time of Offence</h4>
+                <p class='field-value'>{{ticket.incident.time}}</p>
+              </div>
+              <div class='ticket-field parish-offence'>
+                <h4 class='field-name'>Parish of Offence</h4>
+                <p class='field-value'>{{ticket.location.parish}}</p>
+              </div>
+            </div>
+
+            <div class='ticket-row offence-2'>
+              <div class='ticket-field offence-location'>
+                <h4 class='field-name'>Location of Offence</h4>
+                <p class='field-value'>{{ticket.location.description}}</p>
+              </div>
+              <div class='ticket-field offence-desc'>
+                <h4 class='field-name'>Description of Offence</h4>
+                <p class='field-value'>{{ticket.offence.description}}</p>
+              </div>
+            </div>
+
+            <div class='ticket-row tax-auth'>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Fine</h4>
+                <p class='field-value'>&#36{{ticket.offence.fine}}</p>
+              </div>
+              <div class='ticket-field'>
+                <h4 class='field-name'>Points Assigned</h4>
+                <p class='field-value'>{{ticket.offence.points}}</p>
+              </div>
+              <div class='ticket-field payment-deadline'>
+                <h4 class='field-name'>Payment Deadline</h4>
+                <p class='field-value'>{{ticket.paymentDeadline}}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section>
+          <h3>TRAFFIC CAM SNAPSHOT</h3>
+          <div id='snapshot-container'>
+            <img :src="ticket.incident.image" alt='offender snapshot' class=''/>
+          </div>
+          <div class='ticket-row official-use'>
+            <div class='ticket-field'>
+              <h4 class='field-name'>Traffic Ticket No.</h4>
+              <p class='field-value'>{{ticket.id}}</p>
+            </div>
+            <div class='ticket-field'>
+              <h4 class='field-name'>Date of Issue</h4>
+              <p class='field-value'>{{ticket.dateIssued}}</p>
+            </div>
+            <div class='ticket-field'>
+              <h4 class='field-name'>Status</h4>
+              <p class='field-value'>{{ticket.status}}</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  `,
+  data() {
+    return {
+      ticket: {
+        'vehicleOwner': '',
+        'vehicle': '',
+        'offence': '',
+        'incident': '',
+        'location': '',
+        'status': '',
+        'dateIssued': '',
+        'id': ''
+      },
+      user: sessionStorage.getItem('jets_user'),
+      flashMessage: sessionStorage.getItem('flash'),
+      displayFlash: false,
+      isSuccess: false,
+      alertSuccessClass: 'alert-success',
+      alertErrorClass: 'alert-danger'
+    }
+  },
+  created(){
+    if (!isLoggedIn()){
+      this.$router.push('/login');
+      return;
+    }
+    loginNav();
+    let self = this;
+    self.fetchOffender(self);
+    flashMessage(self);
+  },
+  methods: {
+    fetchOffender(self){
+      fetch(`/api/flagged/${this.$route.params.ticketID}/${this.$route.params.ticketStatus}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrf_token,
+            'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+        },
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json();
+        })
+      .then(function (response) {
+        self.ticket = response;
+        console.log(response)    
+      })
+    },
+    printTicket(self){
+        // Make navbar and footer invisible
+        document.getElementById('navbar').classList.add('d-none');
+        document.getElementById('navbar').classList.remove('d-flex');
+        document.getElementById('footer').classList.add('d-none');
+        document.getElementById('print-btn').classList.add('d-none');
+        document.getElementById('print-btn').classList.remove('d-flex');
+        document.getElementById('flagged-ticket-status').classList.add('d-none');
+        document.getElementById('flagged-ticket-status').classList.remove('d-flex');
+        document.getElementsByClassName('issue-btn')[0].classList.add('d-none');
+        document.getElementsByClassName('issue-btn')[0].classList.remove('d-flex');
+        document.getElementsByClassName('archive-btn')[0].classList.add('d-none');
+        document.getElementsByClassName('archive-btn')[0].classList.remove('d-flex');
+        
+        window.print()  // Print E-Ticket
+
+        // Make navbar and footer Visible
+        document.getElementById('navbar').classList.remove('d-none');
+        document.getElementById('navbar').classList.add('d-flex');
+        document.getElementById('footer').classList.remove('d-none');
+        document.getElementById('print-btn').classList.remove('d-none');
+        document.getElementById('print-btn').classList.add('d-flex');
+        document.getElementById('flagged-ticket-status').classList.remove('d-none');
+        document.getElementById('flagged-ticket-status').classList.add('d-flex');
+        document.getElementsByClassName('issue-btn')[0].classList.remove('d-none');
+        document.getElementsByClassName('issue-btn')[0].classList.add('d-flex');
+        document.getElementsByClassName('archive-btn')[0].classList.remove('d-none');
+        document.getElementsByClassName('archive-btn')[0].classList.add('d-flex');
+    },
+    issueFlagedImageTicket(registrationNumber){
+      let self = this;
+      console.log(`ISSUING TICKET TO: ${registrationNumber}`)
+      fetch(`/api/issue/flaggedImage?registrationNumber=${registrationNumber}&ticketID=${self.ticket['id']}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrf_token,
+            'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+        },
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json();
+        })
+      .then(function (response) {
+        if(response['id'] === '#'){
+          let status = 'NO VEHICLE OR VEHICLE OWNER FOUND'
+          console.log(status);
+          sessionStorage.setItem('flash',status); 
+          //this.$router.push(`/flagged/${this.ticket['id']}/IMAGE PROCESSING ERROR`);
+          window.history.back();
+        } else {
+          // IF TICKET WAS SUCCESSFULLY ISSUED
+          if(response['status'].search('ISSUED') >= 0){
+            console.log(response['status']);  
+            self.$router.push(`/issued/${response['id']}`);
+            sessionStorage.setItem('flash',response['status']);
+          } else {
+            console.log(response['status']);
+            window.history.back();
+            sessionStorage.setItem('flash',response['status']);
+          }
+        }
+        console.log(response)    
+      })
+    },
+    issueFlagedEmailTicket(emailAddress){
+      let self = this;
+      console.log(`ISSUING TICKET TO: ${emailAddress}`)
+      fetch(`/api/issue/flaggedEmail?email=${emailAddress}&ticketID=${self.ticket['id']}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrf_token,
+            'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+        },
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json();
+        })
+      .then(function (response) {
+        if(response['id'] === '#'){
+          let status = 'NO VEHICLE OR VEHICLE OWNER FOUND'
+          console.log(status);
+          sessionStorage.setItem('flash',status); 
+          //this.$router.push(`/flagged/${this.ticket['id']}/IMAGE PROCESSING ERROR`);
+          window.history.back();
+        } else {
+          // IF TICKET WAS SUCCESSFULLY ISSUED
+          if(response['status'].search('ISSUED') >= 0){
+            console.log(response['status']);  
+            self.$router.push(`/issued/${response['id']}`);
+            sessionStorage.setItem('flash',response['status']);
+          } else {
+            console.log(response['status']); 
+            self.$router.push(`/flagged/${response['id']}/${response['status']}`);
+            sessionStorage.setItem('flash',response['status']);
+          }
+        }
+        console.log(response)    
+      })
+    },
+    archiveTicket(){
+      let self = this;
+      console.log(`ARCHIVING TICKET`)
+      fetch(`/api/archives/new?ticketID=${self.ticket['id']}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrf_token,
+            'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+        },
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json();
+        })
+      .then(function (response) {
+        console.log(response) 
+        self.$router.push(`/archives/${response['id']}/${response['status']}`);
+        sessionStorage.setItem('flash',response['status']);   
+      })
+    },
+    openModal(){
+        openModal()
+    },
+    closeModal(){
+      closeModal()
+    }
+  }
+};
+
+const ViewArchived = {
+  name: 'ViewArchived',
+  template: `
+    <div id="ticket-page-container" class="mt-5">
+      <j-modal v-if="ticket.status === 'IMAGE PROCESSING ERROR'" headerTitle='LOCATE VEHICLE INFORMATION' inputLabel='Registration #' icon='search_btn.svg' btnText='Locate' @submit='issueArchivedTicket'></j-modal>
+      <transition name="fade" class="mt-5">
+        <div v-if="displayFlash" v-bind:class="[isSuccess ? alertSuccessClass : alertErrorClass]" class="alert">
+            {{ flashMessage }}
+        </div>
+      </transition>
+      <div class="controls d-flex justify-content-end pt-2">
+        <issue-btn @issue_ticket=openModal class='issue-btn'></issue-btn>
         <print-btn id='print-btn' class='ml-3' @click=printTicket></print-btn>
       </div>
       <div id='flagged-ticket-status' class='status-bar rounded-top mt-5 d-flex align-items-center'>
@@ -1093,7 +1564,7 @@ const ViewFlagged = {
         'incident': '',
         'location': '',
         'status': '',
-        'dateFlagged': '',
+        'dateIssued': '',
         'id': ''
       },
       user: sessionStorage.getItem('jets_user'),
@@ -1116,7 +1587,7 @@ const ViewFlagged = {
   },
   methods: {
     fetchOffender(self){
-      fetch(`/api/flagged/${this.$route.params.ticketID}/${this.$route.params.ticketStatus}`, {
+      fetch(`/api/archives/${this.$route.params.ticketID}/${this.$route.params.ticketStatus}`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': csrf_token,
@@ -1161,10 +1632,10 @@ const ViewFlagged = {
         document.getElementsByClassName('archive-btn')[0].classList.remove('d-none');
         document.getElementsByClassName('archive-btn')[0].classList.add('d-flex');
     },
-    issueFlagedImageTicket(registrationNumber){
+    issueArchivedTicket(registrationNumber){
       let self = this;
       console.log(`ISSUING TICKET TO: ${registrationNumber}`)
-      fetch(`/api/issue/flaggedImage?registrationNumber=${registrationNumber}&ticketID=${self.ticket['id']}`, {
+      fetch(`/api/issue/archived?registrationNumber=${registrationNumber}&ticketID=${self.ticket['id']}`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': csrf_token,
@@ -1191,42 +1662,6 @@ const ViewFlagged = {
           } else {
             console.log(response['status']);
             window.history.back();
-            sessionStorage.setItem('flash',response['status']);
-          }
-        }
-        console.log(response)    
-      })
-    },
-    issueFlagedEmailTicket(emailAddress){
-      let self = this;
-      console.log(`ISSUING TICKET TO: ${emailAddress}`)
-      fetch(`/api/issue/flaggedEmail?email=${emailAddress}&ticketID=${self.ticket['id']}`, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': csrf_token,
-            'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
-        },
-        credentials: 'same-origin'
-      })
-      .then(function (response) {
-        return response.json();
-        })
-      .then(function (response) {
-        if(response['id'] === '#'){
-          let status = 'NO VEHICLE OR VEHICLE OWNER FOUND'
-          console.log(status);
-          sessionStorage.setItem('flash',status); 
-          //this.$router.push(`/flagged/${this.ticket['id']}/IMAGE PROCESSING ERROR`);
-          window.history.back();
-        } else {
-          // IF TICKET WAS SUCCESSFULLY ISSUED
-          if(response['status'].search('ISSUED') >= 0){
-            console.log(response['status']);  
-            self.$router.push(`/issued/${response['id']}`);
-            sessionStorage.setItem('flash',response['status']);
-          } else {
-            console.log(response['status']); 
-            self.$router.push(`/flagged/${response['id']}/${response['status']}`);
             sessionStorage.setItem('flash',response['status']);
           }
         }
@@ -2162,7 +2597,8 @@ const routes = [
     { path: '/issued', component: Offenders },
     { path: '/issued/:ticketID', component: ViewIssued },
     { path: '/flagged/:ticketID/:ticketStatus', component: ViewFlagged },
-    { path: '/archives', component: Notifications },
+    { path: '/archives/:ticketID/:ticketStatus', component: ViewArchived },
+    { path: '/archives', component: Archives },
     { path: '/issueTicket', component: ManualIssue },
     { path: '/searchResults', component: SearchResults },
     { path: '/accountSettings', component: AccountSettings },

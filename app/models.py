@@ -74,7 +74,7 @@ class Incident(db.Model):
         return '<Incident %r %r>' % (self.id, self.image)
 
 '''JETS API'''
-class IssuedTicket(db.Model):
+class IssuedTicket(db.Model):   # add payment deadline to IssuedTicket
     __tablename__ = 'IssuedTicket'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -82,12 +82,14 @@ class IssuedTicket(db.Model):
     incidentID = db.Column(db.Integer, db.ForeignKey('Incident.id'), nullable=False, unique=True)
     datetime = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(70), nullable=False)
+    #paymentDeadline = db.Column(db.DateTime, nullable=False)
 
     def __init__(self, trn, incidentID, datetimeIssued, status):
         self.trn = trn
         self.incidentID = incidentID
         self.datetime = datetimeIssued
         self.status = status
+        #self.paymentDeadline = paymentDeadline
  
     def get_id(self):
         try:
