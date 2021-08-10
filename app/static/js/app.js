@@ -348,9 +348,9 @@ const Offenders = {
           </div>
         </transition>
       <div class='controls-container d-flex justify-content-between pt-3'>
-        <search-bar @click=openModal></search-bar>
+        <search-bar></search-bar>
         <div class='buttons d-flex'>
-          <simulate-btn @click=simulateOffender></simulate-btn>
+          <simulate-btn @click=fetchImage></simulate-btn>
           <reset-btn @click='resetSimulation' class='ml-4'></reset-btn>
         </div>
       </div>
@@ -389,10 +389,10 @@ const Offenders = {
           <img src="/static/assets/close.svg" @click=closeModal class="close" alt="Close Icon">
         </div>
         <div class="jmodal-body">
-          <img src="/static/assets/coat_of_arms.png" alt="Traffic Cam Image" class=''>
+          <img :src="selectedImage" alt="Traffic Cam Image" class='w-100'>
         </div>
         <div class="jmodal-footer d-flex justify-content-end">
-          <div class="btn d-flex justify-content-start align-items-center modal-btn" @click="; closeModal();">
+          <div class="btn d-flex justify-content-start align-items-center modal-btn" @click="simulateOffender(selectedImage); closeModal();">
             <img src="/static/assets/send_email.svg" alt="Button Icon">
             <span class="d-inline-block pl-2">Continue</span>
           </div>
@@ -404,6 +404,7 @@ const Offenders = {
   data() {
       return {
         tickets: [],
+        selectedImage: '',
         flashMessage: sessionStorage.getItem('flash'),
         displayFlash: false,
         isSuccess: false,
@@ -455,10 +456,10 @@ const Offenders = {
           console.log(error);
       });
     },
-    simulateOffender() {
+    simulateOffender(selectedImage) {
       let self = this;
       let endSimulation = false;
-      fetch("/api/simulate", {
+      fetch(`/api/simulate?q=${self.selectedImage}`, {
           method: 'GET',
           headers: {
               'X-CSRFToken': csrf_token,
@@ -495,6 +496,31 @@ const Offenders = {
           sessionStorage.setItem('flash', 'NO MORE IMAGES TO SERVE');
           window.location.reload();
         }
+      })
+      .catch(function (error) {
+          console.log(error);
+      });
+    },
+    fetchImage(){
+      let self = this;
+      fetch("/api/snapshot", {
+          method: 'GET',
+          headers: {
+              'X-CSRFToken': csrf_token,
+              'Authorization': 'Bearer ' + sessionStorage.getItem('jets_token')
+          },
+          credentials: 'same-origin'
+      })
+      .then(function (response) {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+      })
+      .then(function (offenceData) {
+        self.selectedImage = offenceData['image'];
+        self.openModal();
+        console.log(self.selectedImage);
       })
       .catch(function (error) {
           console.log(error);

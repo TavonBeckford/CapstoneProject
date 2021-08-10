@@ -188,19 +188,28 @@ def logout():
     return response
 
 
+@app.route("/api/snapshot", methods=["GET"])
+@login_required
+@requires_auth
+def getOffenderSnapshot():
+    image = get_random_file(app.config['UPLOADS_FOLDER'])
+    return jsonify({'image': os.path.join(app.config['UPLOADS_FOLDER'], image)}) 
+
+
 @app.route("/api/simulate", methods=["GET"])
 @login_required
 @requires_auth
 def simulateOffense():  # pass image name after viewing on front end
     """ Simulate an Offense """
 
-    print('\nGetting random traffic cam data')
+    selectedImage = request.args.get('q').split('/')[-1]    #get image name only
+    print(f'\nGetting random traffic cam data for {selectedImage}')
     # SELECT A RANDOM TRAFFIC CAMERA AND IMAGE. QUERY OFFENCE TABLE FOR THE SELECTED VALID CAM OFFENCE
     trafficCam = get_random_record(TrafficCam)
     offenceCode = random.choice(trafficCam.validOffences.split())    # Extract the list of valid offences for the selected camera and select a random choice
     offence = Offence.query.get(offenceCode)
     location = Location.query.get(trafficCam.locationID)
-    image = get_random_file(app.config['UPLOADS_FOLDER'])   # Return a random file from the uploads folder
+    image = selectedImage #get_random_file(app.config['UPLOADS_FOLDER'])   # Return a random file from the uploads folder
 
     # IF THERE ARE NO MORE IMAGES IN THE ./uploads FOLDER
     # RETURN None
