@@ -212,6 +212,8 @@ input /*[type='text'], input[type='search'], select, textarea*/{
 
 input[type='file'] {
     font-weight: 500;
+    width: 18rem !important;
+    font-size: 13px;
 }
 input:focus /*, input[type='text']:focus, input[type='password']:focus, textarea:focus*/{
     outline-style:solid;
@@ -408,6 +410,12 @@ table tbody tr:hover{
     cursor: pointer;
     background-color: var(--tableHover);
 }
+#avg-offence-table-body tr:hover{
+    cursor: default;
+}
+#avg-offence tr *:last-child{
+    /*padding-left: 10rem !important;*/
+}
 footer{
     background-color: var(--navbar) !important;
     color: var(--white);
@@ -534,6 +542,11 @@ footer{
 /* END TRAFFIC TICKET */
 
 
+#manual-submit-btn:hover{
+    opacity: 0.95;
+}
+
+
 /* ACCOUNT SETTINGS */
 
 #change-password-btn{
@@ -646,6 +659,10 @@ footer{
 }
 
 /* END REGISTRATION PAGE */
+
+#stats-page-container h1{
+    color: var(--navbar);
+}
 
 
 /* JMODAL */

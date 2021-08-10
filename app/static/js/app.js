@@ -1347,7 +1347,7 @@ const ViewFlagged = {
       .then(function (response) {
         console.log(response) 
         self.$router.push(`/archives/${response['id']}/${response['status']}`);
-        sessionStorage.setItem('flash',response['status']);   
+        sessionStorage.setItem('flash','THIS TICKET HAS BEEN ARCHIVED');   
       })
     },
     openModal(){
@@ -1681,11 +1681,11 @@ const ManualIssue = {
   name: 'ManualIssue',
   template: `
 
-    <div class="container d-flex justify-content-center py-5">
+    <div class="container d-flex justify-content-center pb-5">
       <div class='d-flex form-container flex-column'>
 
-        <form method="post" @submit.prevent="add_offender" id="manualIssueForm" class="mb-5 p-5 rounded border d-flex flex-column align-items-center">
-          <h1 class="sign-in-text mb-4">Issue Ticket</h1>  
+        <form method="post" @submit.prevent="add_offender" id="manualIssueForm" class="px-5 pb-3 rounded border d-flex flex-column align-items-center">
+          <h1 class="sign-in-text my-3">Issue Ticket</h1>  
           <div class="form-group sm-padding-right">
             <label for="date"><span class='pr-2'>Date</span><span id='date-format'>(yyyy-mm-dd)</span></label><br>
             <input type="text" name="date" class='form-control' required/> 
@@ -1728,11 +1728,11 @@ const ManualIssue = {
               <option value="E400">Exceeding the speed limit > 80kmph</option>
             </select>
           </div>
-          <div class="form-group d-flex flex-column pl-3">
+          <div class="form-group d-flex flex-column">
             <label for="snapshot">Snapshot</label>
             <input type="file" name="snapshot" required/> 
           </div>
-          <button type="submit" name="submit-btn" class="btn submit-button py-1 mx-auto mt-3 w-50" style='color: white'>Submit</button>
+          <button id='manual-submit-btn' type="submit" name="submit-btn" class="btn submit-button py-1 mx-auto mt-2 w-50" style='color: white'>Submit</button>
         </form>
       </div>
     </div>
@@ -1994,8 +1994,60 @@ const AccountSettings = {
 const Stats = {
   name: 'Stats',
   template: `
-    <div id="stats-page-container" class="d-flex justify-content-center">
-      <h1>STATISTICAL REPORTS</h1>
+    <div id="stats-page-container" class="d-flex flex-column">
+      <h1 class='mt-3 mb-5 align-self-center'>STATISTICAL REPORTS</h1>
+      <h2 class='mb-4 align-self-center'>OFFENCE DATA</h2>
+      <div class="d-flex flex-column align-items-center border rounded pt-4 w-75 align-self-center">
+
+        <div class="form-group">
+          <label for="parish">Traffic Division</label><br>
+          <select name="parish" id="parish" form="manualIssueForm" class="form-control">
+            <option value="St. Andrew">Islandwide</option>
+            <option value="St. Andrew">St. Andrew</option>
+            <option value="Kingston">Kingston</option>
+            <option value="St. Catherine">St. Catherine</option>
+            <option value="Clarendon">Clarendon</option>
+            <option value="Manchester">Manchester</option>
+            <option value="St. Elizabeth">St. Elizabeth</option>
+            <option value="Westmoreland">Westmoreland</option>
+            <option value="Hanover">Hanover</option>
+            <option value="St. James">St. James</option>
+            <option value="Trelawny">Trelawny</option>
+            <option value="St. Ann">St. Ann</option>
+            <option value="St. Mary">St. Mary</option>
+            <option value="Portland">Portland</option>
+            <option value="St. Thomas">St. Thomas</option>
+          </select>
+        </div>
+
+        <table class="table w-50" id="avg-offence">
+          <caption class="sr-only">Average Offence per Day, per Traffic Division</caption>
+          <thead>
+            <tr>
+              <th scope="col">Offence</th>
+              <th scope="col">Daily Avg/Vehicle</th>
+            </tr>
+          </thead>
+          <tbody id='avg-offence-table-body'>
+            <tr>
+              <td class=''>Failure to obey traffic signal</td>
+              <td>9.9</td>
+            </tr>
+            <tr>
+              <td class=''>Exceeding the speed limit > 10kmph</td>
+              <td>21.7</td>
+            </tr>
+            <tr>
+              <td class=''>Exceeding the speed limit > 50kmph</td>
+              <td>14.3</td>
+            </tr>
+            <tr>
+              <td class=''>Exceeding the speed limit > 80kmph</td>
+              <td>1.3</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     `,
     data() {
