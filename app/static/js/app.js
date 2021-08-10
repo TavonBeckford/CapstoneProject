@@ -348,7 +348,7 @@ const Offenders = {
           </div>
         </transition>
       <div class='controls-container d-flex justify-content-between pt-3'>
-        <search-bar></search-bar>
+        <search-bar @click=openModal></search-bar>
         <div class='buttons d-flex'>
           <simulate-btn @click=simulateOffender></simulate-btn>
           <reset-btn @click='resetSimulation' class='ml-4'></reset-btn>
@@ -377,6 +377,28 @@ const Offenders = {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- The Modal -->
+    <div id="jmodal" class="jmodal align-self-center pb-5">
+
+      <!-- Modal content -->
+      <div class="jmodal-content">
+        <div class="jmodal-header d-flex justify-content-between align-items-center">
+          <h2 class=''>Traffic Cam Image</h2>
+          <img src="/static/assets/close.svg" @click=closeModal class="close" alt="Close Icon">
+        </div>
+        <div class="jmodal-body">
+          <img src="/static/assets/coat_of_arms.png" alt="Traffic Cam Image" class=''>
+        </div>
+        <div class="jmodal-footer d-flex justify-content-end">
+          <div class="btn d-flex justify-content-start align-items-center modal-btn" @click="; closeModal();">
+            <img src="/static/assets/send_email.svg" alt="Button Icon">
+            <span class="d-inline-block pl-2">Continue</span>
+          </div>
+        </div>
+      </div>
+
     </div>
     `,
   data() {
@@ -507,6 +529,12 @@ const Offenders = {
       .catch(function (error) {
           console.log(error);
       });
+    },
+    openModal(){
+        openModal()
+    },
+    closeModal(){
+      closeModal()
     },
     sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
