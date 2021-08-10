@@ -392,7 +392,7 @@ const Offenders = {
           <img :src="selectedImage" alt="Traffic Cam Image" class='w-100'>
         </div>
         <div class="jmodal-footer d-flex justify-content-end">
-          <div class="btn d-flex justify-content-start align-items-center modal-btn" @click="simulateOffender(selectedImage); closeModal();">
+          <div class="btn d-flex justify-content-start align-items-center modal-btn" @click="simulateOffender(); closeModal();">
             <img src="/static/assets/send_email.svg" alt="Button Icon">
             <span class="d-inline-block pl-2">Continue</span>
           </div>
@@ -456,7 +456,7 @@ const Offenders = {
           console.log(error);
       });
     },
-    simulateOffender(selectedImage) {
+    simulateOffender() {
       let self = this;
       let endSimulation = false;
       fetch(`/api/simulate?q=${self.selectedImage}`, {
@@ -518,8 +518,15 @@ const Offenders = {
         return response.json();
       })
       .then(function (offenceData) {
-        self.selectedImage = offenceData['image'];
-        self.openModal();
+        if(!offenceData['id']){
+          self.selectedImage = offenceData['image'];
+          self.openModal();
+        } else {
+          sessionStorage.setItem('flash', 'NO MORE IMAGES TO SERVE');
+          window.location.reload();
+          console.log('NO MORE IMAGES TO SERVE')
+        }
+        
         console.log(self.selectedImage);
       })
       .catch(function (error) {

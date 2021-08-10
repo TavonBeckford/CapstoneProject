@@ -192,8 +192,14 @@ def logout():
 @login_required
 @requires_auth
 def getOffenderSnapshot():
-    image = get_random_file(app.config['UPLOADS_FOLDER'])
-    return jsonify({'image': os.path.join(app.config['UPLOADS_FOLDER'], image)}) 
+    
+    try:
+        image = get_random_file(app.config['UPLOADS_FOLDER'])
+        response = {'image': os.path.join(app.config['UPLOADS_FOLDER'], image)}
+    except Exception:
+        response = {'id':'#'}
+        
+    return jsonify(response) 
 
 
 @app.route("/api/simulate", methods=["GET"])
