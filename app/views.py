@@ -1375,7 +1375,7 @@ def reset_uploads_dir():
     if files != []:
         print('\nMoving files from issued folder to uploads folder')
         # Move files from issued folder to uploads folder
-        for file in getFilenames(issued):
+        for file in files:
             print(f'\t{file}')
             os.rename(os.path.join(issued, file), os.path.join(uploads, file))
         print('\nMoved files from issued folder to uploads folder')
@@ -1386,7 +1386,7 @@ def reset_uploads_dir():
     if files != []:
         print('\nMoving files from archives folder to uploads folder')
         # Move files from issued folder to uploads folder
-        for file in getFilenames(issued):
+        for file in files:
             print(f'\t{file}')
             os.rename(os.path.join(archives, file), os.path.join(uploads, file))
         print('\nMoved files from archives folder to uploads folder')
